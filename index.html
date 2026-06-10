@@ -281,14 +281,45 @@
         </div>
 
         <div class="ctl">
-          <div class="presets">
-            <span style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.16em;color:var(--faint);text-transform:uppercase;align-self:center;margin-right:2px">Presets</span>
-            <button data-p="earth">Earth twin</button>
-            <button data-p="trappist">TRAPPIST-1e</button>
-            <button data-p="hotjup">Hot Jupiter</button>
-            <button data-p="superearth">Super-Earth</button>
-            <button data-p="eb">Eclipsing binary</button>
+          <div class="ctl-top"><label><i data-lucide="library"></i>Known exoplanet preset</label></div>
+          <div class="selrow">
+            <select id="preset">
+              <option value="">— select a template —</option>
+              <optgroup label="Solar System (calibration)">
+                <option value="earth">Earth</option>
+                <option value="venus">Venus</option>
+                <option value="mars">Mars</option>
+              </optgroup>
+              <optgroup label="Habitable-zone candidates">
+                <option value="proxb">Proxima Centauri b</option>
+                <option value="trappist1d">TRAPPIST-1d</option>
+                <option value="trappist1e">TRAPPIST-1e</option>
+                <option value="trappist1f">TRAPPIST-1f</option>
+                <option value="kepler186f">Kepler-186f</option>
+                <option value="kepler442b">Kepler-442b</option>
+                <option value="kepler452b">Kepler-452b ("Earth's cousin")</option>
+                <option value="kepler1649c">Kepler-1649c</option>
+                <option value="toi700d">TOI-700d</option>
+                <option value="toi700e">TOI-700e</option>
+              </optgroup>
+              <optgroup label="Sub-Neptunes & super-Earths">
+                <option value="k218b">K2-18 b</option>
+                <option value="kepler22b">Kepler-22b</option>
+                <option value="gj1214b">GJ 1214 b</option>
+                <option value="cnce">55 Cancri e</option>
+                <option value="superearth">Generic Super-Earth</option>
+              </optgroup>
+              <optgroup label="Hot Jupiters">
+                <option value="peg51b">51 Pegasi b (first around Sun-like)</option>
+                <option value="hd209458b">HD 209458 b ("Osiris")</option>
+                <option value="hotjup">Generic Hot Jupiter</option>
+              </optgroup>
+              <optgroup label="Test cases">
+                <option value="eb">Eclipsing binary (false positive)</option>
+              </optgroup>
+            </select>
           </div>
+          <div class="hint">Choose template from known exoplanets to compare.</div>
         </div>
 
       </div>
@@ -620,21 +651,38 @@ function drawStage(P,R,hz){
   $('stageMeta').innerHTML=`<b>${STARS[starIdx].sp}</b>-type · ${STARS[starIdx].teff} K<br><b>${P.au.toFixed(2)}</b> AU · <b>${P.rp.toFixed(1)}</b> R⊕`;
 }
 
-/* presets */
+/* presets — major known exoplanets + Solar System calibrators */
 const PRE={
-  earth:{star:2,au:1,rp:1,mp:1,disp:'CP',verd:'planet_candidate_clean',obs:6,det:6},
-  trappist:{star:0,au:0.028,rp:0.92,mp:0.69,disp:'CP',verd:'planet_candidate_clean',obs:8,det:7},
-  hotjup:{star:3,au:0.05,rp:3.5,mp:12,disp:'CP',verd:'planet_candidate_clean',obs:4,det:4},
-  superearth:{star:1,au:0.7,rp:1.6,mp:5,disp:'PC',verd:'planet_candidate_clean',obs:5,det:4},
-  eb:{star:4,au:0.4,rp:3.4,mp:12,disp:'FP',verd:'eclipsing_binary_candidate',obs:3,det:3},
+  earth:       {star:2, au:1.00,   rp:1.00, mp:1.00,  disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
+  venus:       {star:2, au:0.72,   rp:0.95, mp:0.82,  disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
+  mars:        {star:2, au:1.52,   rp:0.53, mp:0.107, disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
+  proxb:       {star:0, au:0.0485, rp:1.07, mp:1.27,  disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
+  trappist1d:  {star:0, au:0.022,  rp:0.78, mp:0.39,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
+  trappist1e:  {star:0, au:0.029,  rp:0.92, mp:0.69,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
+  trappist1f:  {star:0, au:0.038,  rp:1.04, mp:0.68,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
+  kepler186f:  {star:0, au:0.43,   rp:1.17, mp:1.4,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
+  kepler442b:  {star:1, au:0.41,   rp:1.34, mp:2.3,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
+  kepler452b:  {star:2, au:1.05,   rp:1.63, mp:5.0,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
+  kepler1649c: {star:0, au:0.083,  rp:1.06, mp:1.2,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
+  toi700d:     {star:0, au:0.163,  rp:1.19, mp:1.7,   disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
+  toi700e:     {star:0, au:0.134,  rp:0.95, mp:0.8,   disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
+  k218b:       {star:0, au:0.143,  rp:2.61, mp:8.6,   disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
+  kepler22b:   {star:2, au:0.85,   rp:2.40, mp:6.0,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
+  gj1214b:     {star:0, au:0.014,  rp:2.85, mp:6.55,  disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
+  cnce:        {star:2, au:0.015,  rp:1.88, mp:7.99,  disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
+  peg51b:      {star:2, au:0.052,  rp:3.50, mp:12,    disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
+  hd209458b:   {star:2, au:0.047,  rp:3.50, mp:12,    disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
+  hotjup:      {star:3, au:0.05,   rp:3.50, mp:12,    disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
+  superearth:  {star:1, au:0.70,   rp:1.60, mp:5.0,   disp:'PC', verd:'planet_candidate_clean',        obs:5, det:4},
+  eb:          {star:4, au:0.40,   rp:3.40, mp:12,    disp:'FP', verd:'eclipsing_binary_candidate',    obs:3, det:3},
 };
-document.querySelectorAll('.presets [data-p]').forEach(btn=>{
-  btn.onclick=()=>{const p=PRE[btn.dataset.p];
-    starIdx=p.star; buildStarSeg();
-    $('au').value=p.au; $('rad').value=p.rp; $('mass').value=p.mp;
-    $('disp').value=p.disp; $('verd').value=p.verd;
-    $('secObs').value=p.obs; $('secDet').max=p.obs; $('secDet').value=p.det;
-    render();};
+$('preset').addEventListener('change',e=>{
+  const p=PRE[e.target.value]; if(!p)return;
+  starIdx=p.star; buildStarSeg();
+  $('au').value=p.au; $('rad').value=p.rp; $('mass').value=p.mp;
+  $('disp').value=p.disp; $('verd').value=p.verd;
+  $('secObs').value=p.obs; $('secDet').max=p.obs; $('secDet').value=p.det;
+  render();
 });
 
 ['au','rad','mass','disp','verd','secObs','secDet'].forEach(id=>{
