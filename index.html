@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exoworld — Habitability Tuner</title>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  /* ─────────────────────────────────────────────────────────────
+     EXOWORLD — a Habitability Chance Index tuner
+     Palette: deep observatory night + a vibrant spectral-class
+     ramp (O→M) used as the page's organizing color system, so the
+     vibrancy is *meaningful* (it maps to real stellar temperature),
+     not decorative.
+     Type: "Space Grotesk" display + "Inter" body + "JetBrains Mono" data.
+  ───────────────────────────────────────────────────────────────*/
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --bg:#0a0e1a; --bg2:#0f1424; --panel:#141a2e; --panel2:#1b2238;
+    --line:#283150; --ink:#eef2ff; --muted:#9aa6c8; --faint:#5e6a8f;
+    /* spectral ramp — vibrant + diverse, mapped to Teff */
+    --o:#7aa2ff; --b:#a5c7ff; --a:#e8eeff; --f:#fff4d6; --g:#ffd76b;
+    --k:#ff9d4d; --m:#ff5d5d;
+    --emerald:#34e3a4; --amber:#ffc24b; --rose:#ff5d7a; --slate:#7b88ad;
+    --violet:#b079ff;
+    --shadow:0 18px 50px -20px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1200px 700px at 78% -10%, rgba(122,162,255,.10), transparent 60%),
+      radial-gradient(900px 600px at 8% 110%, rgba(176,121,255,.10), transparent 55%),
+      var(--bg);
+    color:var(--ink); font-family:'Inter',system-ui,sans-serif;
+    line-height:1.5; -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  /* faint starfield */
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,.55), transparent),
+      radial-gradient(1px 1px at 70% 60%, rgba(255,255,255,.4), transparent),
+      radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,.35), transparent),
+      radial-gradient(1px 1px at 85% 20%, rgba(255,255,255,.45), transparent),
+      radial-gradient(1px 1px at 55% 15%, rgba(255,255,255,.3), transparent),
+      radial-gradient(1px 1px at 12% 70%, rgba(255,255,255,.4), transparent);
+    opacity:.5;}
+  .wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:28px 22px 70px}
+
+  /* ── header ── */
+  header{display:flex;align-items:flex-end;justify-content:space-between;
+    gap:24px;flex-wrap:wrap;margin-bottom:26px;padding-bottom:22px;
+    border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:14px}
+  .mark{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;
+    background:conic-gradient(from 210deg,var(--o),var(--g),var(--k),var(--m),var(--violet),var(--o));
+    box-shadow:0 0 26px -4px rgba(255,157,77,.5)}
+  .mark svg{width:24px;height:24px;color:#0a0e1a}
+  .eyebrow{font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.32em;
+    text-transform:uppercase;color:var(--faint)}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(26px,4vw,40px);
+    letter-spacing:-.02em;line-height:1.02;margin-top:5px}
+  h1 .glow{background:linear-gradient(92deg,var(--g),var(--k),var(--m));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--muted);font-size:13.5px;max-width:430px;margin-top:9px}
+  .sub a{color:var(--g);text-decoration:none;border-bottom:1px dotted var(--g)}
+
+  /* ── layout ── */
+  .grid{display:grid;grid-template-columns:1fr 380px;gap:22px;align-items:start}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+  .panel{background:linear-gradient(180deg,var(--panel),var(--bg2));
+    border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+  .panel-h{display:flex;align-items:center;gap:9px;padding:16px 20px;
+    border-bottom:1px solid var(--line)}
+  .panel-h svg{width:16px;height:16px;color:var(--g)}
+  .panel-h h2{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:500;
+    letter-spacing:.02em}
+  .panel-h .tag{margin-left:auto;font:500 10px/1 'JetBrains Mono',monospace;
+    letter-spacing:.18em;color:var(--faint);text-transform:uppercase}
+  .panel-b{padding:18px 20px}
+
+  /* ── controls ── */
+  .ctl{margin-bottom:19px}
+  .ctl:last-child{margin-bottom:0}
+  .ctl-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .ctl-top label{font-size:12.5px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:7px}
+  .ctl-top label svg{width:13px;height:13px;color:var(--faint)}
+  .val{font:700 13px/1 'JetBrains Mono',monospace;color:var(--g);
+    background:rgba(255,215,107,.09);padding:3px 8px;border-radius:7px;
+    border:1px solid rgba(255,215,107,.18)}
+  .hint{font-size:11px;color:var(--faint);margin-top:5px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
+    border-radius:99px;background:var(--panel2);outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;
+    border-radius:50%;background:var(--ink);border:3px solid var(--g);cursor:pointer;
+    box-shadow:0 2px 8px rgba(0,0,0,.5);transition:transform .12s}
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+  input[type=range]::-moz-range-thumb{width:17px;height:17px;border-radius:50%;
+    background:var(--ink);border:3px solid var(--g);cursor:pointer}
+  input[type=range]:focus-visible::-webkit-slider-thumb{outline:2px solid var(--o);outline-offset:2px}
+
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button{flex:1;min-width:54px;font:500 11.5px/1 'JetBrains Mono',monospace;
+    padding:9px 4px;border-radius:9px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--muted);cursor:pointer;transition:.15s;
+    display:flex;flex-direction:column;align-items:center;gap:4px}
+  .seg button .dot{width:9px;height:9px;border-radius:50%}
+  .seg button:hover{border-color:var(--faint);color:var(--ink)}
+  .seg button[aria-pressed=true]{color:#0a0e1a;font-weight:700;border-color:transparent}
+  .seg.spectral button[aria-pressed=true]{box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+
+  .selrow{display:flex;gap:8px}
+  select{flex:1;font:500 12px/1 'Inter',sans-serif;padding:10px 11px;border-radius:10px;
+    border:1px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer}
+  .switch{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:var(--panel2)}
+  .switch label{font-size:12px;color:var(--ink)}
+  .toggle{position:relative;width:42px;height:23px;flex:none}
+  .toggle input{opacity:0;width:0;height:0}
+  .track{position:absolute;inset:0;background:var(--line);border-radius:99px;transition:.18s;cursor:pointer}
+  .track::before{content:"";position:absolute;left:3px;top:3px;width:17px;height:17px;
+    border-radius:50%;background:var(--ink);transition:.18s}
+  .toggle input:checked + .track{background:var(--emerald)}
+  .toggle input:checked + .track::before{transform:translateX(19px)}
+  .toggle input:focus-visible + .track{outline:2px solid var(--o);outline-offset:2px}
+
+  .presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+  .presets button{font:500 11px/1 'JetBrains Mono',monospace;padding:7px 11px;border-radius:99px;
+    border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;transition:.15s}
+  .presets button:hover{border-color:var(--g);color:var(--g)}
+
+  /* ── system viz ── */
+  .stage{position:relative;height:184px;border-radius:14px;overflow:hidden;
+    background:radial-gradient(120% 130% at 12% 50%, rgba(255,255,255,.04), transparent 50%),
+      linear-gradient(180deg,#070a14,#0c1120);border:1px solid var(--line);margin-bottom:16px}
+  .hz-band{position:absolute;top:0;bottom:0;background:
+    linear-gradient(90deg,rgba(52,227,164,0),rgba(52,227,164,.22),rgba(52,227,164,0));
+    border-left:1px dashed rgba(52,227,164,.4);border-right:1px dashed rgba(52,227,164,.4)}
+  .hz-lbl{position:absolute;bottom:7px;font:500 9px/1 'JetBrains Mono',monospace;
+    letter-spacing:.12em;color:var(--emerald);text-transform:uppercase}
+  .star{position:absolute;left:8px;top:50%;transform:translateY(-50%);border-radius:50%;
+    filter:blur(.3px)}
+  .orbit{position:absolute;left:8px;top:50%;border:1px solid rgba(255,255,255,.09);
+    border-radius:50%;transform:translateY(-50%)}
+  .planet{position:absolute;top:50%;border-radius:50%;transform:translate(-50%,-50%);
+    box-shadow:0 0 12px -1px rgba(0,0,0,.6)}
+  .stage-meta{position:absolute;top:8px;right:11px;text-align:right;
+    font:500 9.5px/1.5 'JetBrains Mono',monospace;color:var(--muted)}
+  .stage-meta b{color:var(--ink)}
+
+  /* ── result ── */
+  .score-card{text-align:center;padding:8px 0 4px}
+  .gauge{position:relative;width:178px;height:178px;margin:0 auto 6px}
+  .gauge svg{transform:rotate(-90deg)}
+  .gauge .mid{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center}
+  .gauge .num{font:700 46px/1 'Space Grotesk',sans-serif;letter-spacing:-.02em}
+  .gauge .den{font:500 11px/1 'JetBrains Mono',monospace;color:var(--faint);margin-top:5px;letter-spacing:.1em}
+  .gauge .rng{font:500 10px/1 'JetBrains Mono',monospace;color:var(--muted);margin-top:7px}
+  .tier{display:inline-flex;align-items:center;gap:7px;margin-top:4px;padding:7px 15px;
+    border-radius:99px;font:600 12.5px/1 'Inter';border:1px solid}
+  .tier svg{width:14px;height:14px}
+  .densb{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;
+    font:700 11px/1 'JetBrains Mono',monospace;letter-spacing:.04em;border:1px solid}
+  .densb svg{width:13px;height:13px}
+
+  .subs{margin-top:18px;display:flex;flex-direction:column;gap:11px}
+  .sub{}
+  .sub-top{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+  .sub-top .nm{font-size:11.5px;font-weight:500}
+  .sub-top .lb{margin-left:auto;font:500 10px/1 'JetBrains Mono',monospace;color:var(--muted);
+    max-width:150px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sub-top .w{font:500 9px/1 'JetBrains Mono',monospace;color:var(--faint);
+    border:1px solid var(--line);border-radius:5px;padding:2px 4px}
+  .bar{height:7px;border-radius:99px;background:var(--panel2);overflow:hidden;position:relative}
+  .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1)}
+  .sub-x{font-size:10.5px;color:var(--faint);margin-top:5px;line-height:1.45;display:none}
+  .sub.open .sub-x{display:block}
+  .sub-top{cursor:pointer}
+
+  .caveats{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  .caveats summary{font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--faint);cursor:pointer;list-style:none;display:flex;align-items:center;gap:7px}
+  .caveats summary svg{width:13px;height:13px}
+  .caveats ul{margin:11px 0 0;padding-left:17px;display:flex;flex-direction:column;gap:8px}
+  .caveats li{font-size:11px;color:var(--muted);line-height:1.5}
+
+  .foot{margin-top:26px;font-size:11px;color:var(--faint);line-height:1.6;text-align:center}
+  .foot code{font-family:'JetBrains Mono',monospace;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="brand">
+        <div class="mark"><i data-lucide="orbit"></i></div>
+        <div>
+          <div class="eyebrow">VetStar · STEHM model</div>
+          <h1>Exoworld <span class="glow">Habitability Tuner</span></h1>
+        </div>
+      </div>
+      <p class="sub">Dial in a hypothetical planet and host star. The
+        <strong>Habitability Chance Index</strong> recomputes live, using VetStar's six-component
+        scoring from <a href="https://github.com/eagnespuerto/vetstar" target="_blank" rel="noopener">eagnespuerto/vetstar</a>.</p>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- ───── controls ───── -->
+    <div class="panel">
+      <div class="panel-h"><i data-lucide="sliders-horizontal"></i><h2>Observables</h2>
+        <span class="tag">tune me</span></div>
+      <div class="panel-b">
+
+        <div class="ctl">
+          <div class="ctl-top"><label><i data-lucide="sun"></i>Host star — spectral class</label></div>
+          <div class="seg spectral" id="segStar"></div>
+          <div class="hint" id="starHint"></div>
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-top"><label><i data-lucide="ruler"></i>Orbital distance</label>
+            <span class="val" id="vAu">1.00 AU</span></div>
+          <input type="range" id="au" min="0.05" max="3" step="0.01" value="1">
+          <div class="hint" id="auHint"></div>
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-top"><label><i data-lucide="circle"></i>Planet radius</label>
+            <span class="val" id="vR">1.00 R⊕</span></div>
+          <input type="range" id="rad" min="0.3" max="3.5" step="0.01" value="1">
+          <div class="hint">STEHM atmosphere-retention threshold ≈ 0.8 R⊕; above ~2.2 R⊕ likely sub-Neptune.</div>
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-top"><label><i data-lucide="weight"></i>Planet mass</label>
+            <span class="val" id="vM">1.00 M⊕</span></div>
+          <input type="range" id="mass" min="0.1" max="12" step="0.05" value="1">
+          <div class="hint" id="rhoHint"></div>
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-top"><label><i data-lucide="badge-check"></i>ExoFOP disposition</label></div>
+          <div class="selrow">
+            <select id="disp">
+              <option value="__none">No TOI designation</option>
+              <option value="__unc">TOI — unclassified</option>
+              <option value="CP">CP — Confirmed planet</option>
+              <option value="KP">KP — Known planet</option>
+              <option value="PC" selected>PC — Planet candidate</option>
+              <option value="APC">APC — Ambiguous candidate</option>
+              <option value="FP">FP — False positive</option>
+              <option value="FA">FA — False alarm</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-top"><label><i data-lucide="scan-search"></i>Pipeline vetting verdict</label></div>
+          <div class="selrow">
+            <select id="verd">
+              <option value="planet_candidate_clean" selected>Planet candidate — on-target</option>
+              <option value="planet_candidate_dirty">Planet candidate — centroid unclear</option>
+              <option value="ambiguous">Ambiguous</option>
+              <option value="no_signal">No significant signal</option>
+              <option value="eclipsing_binary_candidate">Eclipsing-binary candidate</option>
+              <option value="false_positive_blend">Background blend</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-top"><label><i data-lucide="layers"></i>TESS sectors with a detected dip</label>
+            <span class="val" id="vSec">3 / 4</span></div>
+          <input type="range" id="secObs" min="1" max="12" step="1" value="4">
+          <input type="range" id="secDet" min="0" max="12" step="1" value="3" style="margin-top:9px">
+          <div class="hint">Top: sectors observed · Bottom: sectors showing the transit.</div>
+        </div>
+
+        <div class="ctl">
+          <div class="presets">
+            <span style="font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.16em;color:var(--faint);text-transform:uppercase;align-self:center;margin-right:2px">Presets</span>
+            <button data-p="earth">Earth twin</button>
+            <button data-p="trappist">TRAPPIST-1e</button>
+            <button data-p="hotjup">Hot Jupiter</button>
+            <button data-p="superearth">Super-Earth</button>
+            <button data-p="eb">Eclipsing binary</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ───── result ───── -->
+    <div class="panel">
+      <div class="panel-h"><i data-lucide="gauge"></i><h2>Habitability Chance Index</h2>
+        <span class="tag" id="paperTag">STEHM</span></div>
+      <div class="panel-b">
+
+        <div class="stage" id="stage">
+          <div class="hz-band" id="hzBand"><span class="hz-lbl" style="left:4px">hz</span></div>
+          <div class="star" id="starViz"></div>
+          <div class="orbit" id="orbitViz"></div>
+          <div class="planet" id="planetViz"></div>
+          <div class="stage-meta" id="stageMeta"></div>
+        </div>
+
+        <div class="score-card">
+          <div class="gauge">
+            <svg width="178" height="178" viewBox="0 0 178 178">
+              <circle cx="89" cy="89" r="78" fill="none" stroke="var(--panel2)" stroke-width="13"/>
+              <circle id="arc" cx="89" cy="89" r="78" fill="none" stroke="var(--g)"
+                stroke-width="13" stroke-linecap="round" stroke-dasharray="490"
+                stroke-dashoffset="490" style="transition:stroke-dashoffset .5s,stroke .3s"/>
+            </svg>
+            <div class="mid">
+              <div class="num" id="hciNum">—</div>
+              <div class="den">/ 100 HCI</div>
+              <div class="rng" id="hciRng"></div>
+            </div>
+          </div>
+          <div class="tier" id="tier"></div>
+          <div id="densBadge" style="margin-top:10px;display:none"></div>
+        </div>
+
+        <div class="subs" id="subs"></div>
+
+        <details class="caveats">
+          <summary><i data-lucide="triangle-alert"></i>Model caveats</summary>
+          <ul id="caveats"></ul>
+        </details>
+
+      </div>
+    </div>
+  </div>
+
+  <p class="foot">
+    Scoring ported verbatim from <code>backend/app/habitability.py</code> — weighted components:
+    size 30 · zone 25 · star 15 · disposition 15 · flags 10 · sectors 5.
+    Habitable-zone edges use Kopparapu et al. (2013/2014); size thresholds from
+    Hill et al. (2026), STEHM, <code>arXiv:2605.00170</code>. First-order estimate, not a vetting verdict.
+  </p>
+</div>
+
+<script>
+/* ════════ HCI ENGINE — ported from habitability.py ════════ */
+const SOLAR_TEFF=5772, RHO_EARTH=5.51, RHO_ROCKY=0.6, RHO_VOL=0.4;
+const STEHM_SAFE=0.8, STEHM_MARGIN=0.7, STEHM_UPPER=2.2;
+const HZ_I_CHZ=0.95, HZ_O_CHZ=1.676, HZ_I_OHZ=0.75, HZ_O_OHZ=1.765;
+
+// spectral classes (Teff, R⊙) — drives both score and the vibrant ramp
+const STARS=[
+  {sp:'M', teff:3400, r:0.39, col:'var(--m)',  name:'M dwarf'},
+  {sp:'K', teff:4600, r:0.72, col:'var(--k)',  name:'K dwarf'},
+  {sp:'G', teff:5772, r:1.00, col:'var(--g)',  name:'G dwarf (Sun-like)'},
+  {sp:'F', teff:6600, r:1.30, col:'var(--f)',  name:'F dwarf'},
+  {sp:'A', teff:8500, r:1.80, col:'var(--a)',  name:'A star'},
+];
+let starIdx=2;
+
+const KOPP={recent_venus:[1.776,2.136e-4,2.533e-8,-1.332e-11,-3.097e-15],
+  runaway_greenhouse:[1.107,1.332e-4,1.580e-8,-8.308e-12,-1.931e-15],
+  maximum_greenhouse:[0.356,6.171e-5,1.698e-9,-3.198e-12,-5.575e-16],
+  early_mars:[0.320,5.547e-5,1.526e-9,-2.874e-12,-5.011e-16]};
+function kopp(teff,k){const[s0,a,b,c,d]=KOPP[k],t=teff-5780;return s0+a*t+b*t*t+c*t**3+d*t**4;}
+
+function densityVerdict(rhoRel){
+  const g=rhoRel*RHO_EARTH;
+  if(rhoRel>=RHO_ROCKY)return[1.1,null,`${g.toFixed(1)} g/cm³ (~${rhoRel.toFixed(1)} ρ⊕): rocky-consistent`];
+  if(rhoRel<RHO_VOL)return[0.35,'Volatile-rich',`${g.toFixed(1)} g/cm³ (~${rhoRel.toFixed(1)} ρ⊕): too low for rock`];
+  return[0.7,null,`${g.toFixed(1)} g/cm³ (~${rhoRel.toFixed(1)} ρ⊕): intermediate`];
+}
+
+function scoreSize(rp,mp){
+  const w=0.30; let s,label,x;
+  if(rp>STEHM_UPPER){s=0.05;label='Too large';x=`${rp.toFixed(2)} R⊕ exceeds the ~2.2 R⊕ rocky cap; likely a sub-Neptune.`;}
+  else if(rp<0.5){s=0.02;label='Too small';x=`${rp.toFixed(2)} R⊕ below the STEHM range; atmosphere retention ≈ 0.`;}
+  else if(rp>=STEHM_SAFE){s=0.75+0.25*Math.min((rp-STEHM_SAFE)/(1-STEHM_SAFE),1);label='Favourable';
+    x=`${rp.toFixed(2)} R⊕ ≥ 0.8 R⊕ — can retain a long-term CO₂ atmosphere under Earth-like conditions.`;}
+  else if(rp>=STEHM_MARGIN){s=0.35+0.40*(rp-STEHM_MARGIN)/(STEHM_SAFE-STEHM_MARGIN);label='Marginal';
+    x=`${rp.toFixed(2)} R⊕ below the 0.8 R⊕ threshold; retention needs favourable formation conditions.`;}
+  else{s=0.05+0.30*(rp-0.5)/(STEHM_MARGIN-0.5);label='Unlikely';
+    x=`${rp.toFixed(2)} R⊕ < 0.7 R⊕ — STEHM predicts rapid atmosphere loss.`;}
+  // density refine
+  if(mp&&rp>0){
+    const[mult,lo,note]=densityVerdict(mp/rp**3);
+    s=Math.min(1,s*mult); if(lo)label=lo;
+    x+=` Mass ${mp.toFixed(1)} M⊕ ⇒ density ${note}.`;
+  }
+  return{name:'Planet size',score:s,weight:w,label,x};
+}
+
+function scoreHZ(au,teff,rstar){
+  const w=0.25;
+  const lr=rstar*rstar*(teff/5778)**4, sq=Math.sqrt(Math.max(lr,0.01));
+  const iO=HZ_I_OHZ*sq,oO=HZ_O_OHZ*sq,iC=HZ_I_CHZ*sq,oC=HZ_O_CHZ*sq;
+  let s,label,x;
+  if(au<iO){s=0.05;label='Too hot';x=`${au.toFixed(3)} AU inside the optimistic inner edge (${iO.toFixed(3)} AU). Runaway greenhouse.`;}
+  else if(au>oO){s=0.10;label='Too cold';x=`${au.toFixed(3)} AU beyond the optimistic outer edge (${oO.toFixed(3)} AU). Water likely frozen.`;}
+  else if(au<iC){const f=(au-iO)/Math.max(iC-iO,1e-6);s=0.30+0.25*f;label='Warm edge (OHZ)';
+    x=`${au.toFixed(3)} AU — between recent-Venus and runaway-greenhouse limits.`;}
+  else if(au>oC){const f=(oO-au)/Math.max(oO-oC,1e-6);s=0.65+0.30*f;label='Cool edge (OHZ)';
+    x=`${au.toFixed(3)} AU — between max-greenhouse and early-Mars limits; outer-HZ retention favoured.`;}
+  else{const f=(au-iC)/Math.max(oC-iC,1e-6);s=Math.min(0.75+0.20*(1-Math.abs(f-0.5)*2),1);label='Conservative HZ';
+    x=`${au.toFixed(3)} AU — inside the CHZ (${iC.toFixed(3)}–${oC.toFixed(3)} AU). Best case for liquid water.`;}
+  return{name:'Habitable zone',score:s,weight:w,label,x,edges:{iO,oO,iC,oC}};
+}
+
+function scoreStar(teff){
+  const w=0.15; let s,label,x;
+  if(teff>=5000&&teff<6000){s=0.90;label='G dwarf (solar analog)';x=`Teff=${teff} K — the regime STEHM was calibrated for.`;}
+  else if(teff>=6000&&teff<=7500){s=0.80;label='F dwarf';x=`Teff=${teff} K — STEHM results broadly transferable.`;}
+  else if(teff>=3700&&teff<5000){s=0.65;label='K dwarf';x=`Teff=${teff} K — modestly higher XUV than the Sun.`;}
+  else if(teff<3700){s=0.30;label='M dwarf';x=`Teff=${teff} K — STEHM not calibrated for M-dwarf XUV; flares worsen retention.`;}
+  else{s=0.40;label='Hot star';x=`Teff=${teff} K — intense radiation, short main-sequence lifetime.`;}
+  return{name:'Stellar type',score:s,weight:w,label,x};
+}
+
+function scoreDisp(d){
+  const w=0.15;
+  if(d==='__none')return{name:'TOI disposition',score:0.50,weight:w,label:'No TOI',x:'No TOI designation — signal may be new or not yet ingested.'};
+  if(d==='__unc')return{name:'TOI disposition',score:0.55,weight:w,label:'Unclassified TOI',x:'TOI exists but has no disposition yet.'};
+  if(d==='CP'||d==='KP')return{name:'TOI disposition',score:1.00,weight:w,label:'Confirmed/Known',x:`${d} — independently confirmed. Highest confidence.`};
+  if(d==='PC'||d==='APC')return{name:'TOI disposition',score:0.75,weight:w,label:'Planet candidate',x:`${d} — passed TESS pipeline vetting.`};
+  if(d==='FP'||d==='FA')return{name:'TOI disposition',score:0.05,weight:w,label:'False positive/alarm',x:`${d} — ExoFOP flags this as a false positive.`};
+  return{name:'TOI disposition',score:0.50,weight:w,label:d,x:'Unrecognised disposition.'};
+}
+
+function scoreVerd(v){
+  const w=0.10;
+  if(v==='eclipsing_binary_candidate'||v==='false_positive_blend')
+    return{name:'Vetting flags',score:0.05,weight:w,label:'EB / blend',x:'Pipeline flags an eclipsing binary or background blend — not a planet.'};
+  if(v==='no_signal')return{name:'Vetting flags',score:0.40,weight:w,label:'No signal',x:'No significant transit/eclipse signal detected.'};
+  if(v==='planet_candidate_clean')return{name:'Vetting flags',score:0.85,weight:w,label:'Planet candidate',x:'Classified as planet candidate with on-target centroid.'};
+  if(v==='planet_candidate_dirty')return{name:'Vetting flags',score:0.55,weight:w,label:'Planet candidate',x:'Planet candidate, but centroid is unclear.'};
+  return{name:'Vetting flags',score:0.45,weight:w,label:'Ambiguous',x:'Vetting result is ambiguous — manual review recommended.'};
+}
+
+function scoreSectors(det,obs){
+  const w=0.05;
+  if(obs===1)return{name:'Multi-sector',score:0.40,weight:w,label:'Single sector',x:'One sector — period unconstrained.'};
+  if(det===0)return{name:'Multi-sector',score:0.30,weight:w,label:'No detections',x:`0/${obs} sectors show a dip — inconsistent with a real transit.`};
+  const f=det/obs,s=Math.min(0.40+0.60*f,1),tier=f>=0.6?'Consistent':'Partial';
+  return{name:'Multi-sector',score:s,weight:w,label:`${tier} (${det}/${obs})`,
+    x:`Dip in ${det} of ${obs} sectors — ${f>=0.6?'consistent with a real periodic signal.':'more sectors needed.'}`};
+}
+
+function computeHCI(P){
+  const star=STARS[starIdx];
+  const subs=[
+    scoreSize(P.rp,P.mp),
+    scoreHZ(P.au,star.teff,star.r),
+    scoreStar(star.teff),
+    scoreDisp(P.disp),
+    scoreVerd(P.verd),
+    scoreSectors(P.det,P.obs),
+  ];
+  const tw=subs.reduce((a,s)=>a+s.weight,0);
+  let hci=subs.reduce((a,s)=>a+s.score*s.weight,0)/tw*100;
+
+  // ── bulk-density modifier (±10 pts, applied after the weighted average) ──
+  // terrestrial (ρ ≥ 0.6 ρ⊕ ≈ 3.3 g/cm³) → +10; gas-giant (ρ < 0.4 ρ⊕ ≈ 2.2) → −10.
+  let densMod=0, densLabel=null;
+  if(P.rp>0 && P.mp>0){
+    const rhoRel=P.mp/P.rp**3;
+    if(rhoRel>=RHO_ROCKY){densMod=10;densLabel='terrestrial';}
+    else if(rhoRel<RHO_VOL){densMod=-10;densLabel='gas-giant';}
+  }
+  if(densMod) hci=Math.max(0,Math.min(100,hci+densMod));
+
+  const caveats=[];
+  if(star.teff<3700)caveats.push('STEHM is calibrated for Sun-like stars. M-dwarf XUV environments are more hostile — the safe-size threshold may exceed 0.8 R⊕.');
+  if(P.rp>=0.7&&P.rp<0.8)caveats.push('Planet is in the STEHM marginal zone (0.7–0.8 R⊕). Retention depends critically on carbon inventory, HPE, and core fraction.');
+  if(P.obs===1)caveats.push('Only one TESS sector observed. Period is unconstrained — periodicity cannot be verified.');
+  caveats.push('STEHM models a pure-CO₂ stagnant-lid planet as a best case. Non-thermal escape, magnetic fields, and plate tectonics are excluded — this is a first-order estimate only.');
+  if(densLabel){
+    const sign=densMod>0?'+':'';
+    caveats.unshift(`Bulk-density modifier applied: ${sign}${densMod} pts (${densLabel} density). Terrestrial densities (ρp ≳ 3.3 g/cm³) add +10; gas-giant densities (ρp ≲ 2.2 g/cm³) subtract 10.`);
+  }
+
+  // EB / blend hard override
+  if(P.verd==='eclipsing_binary_candidate'||P.verd==='false_positive_blend')hci=Math.min(hci,12);
+
+  let tier,col,icon;
+  if(hci>=70){tier='Promising';col='var(--emerald)';icon='sparkles';}
+  else if(hci>=45){tier='Marginal';col='var(--amber)';icon='circle-dashed';}
+  else if(hci>=20){tier='Unlikely';col='var(--rose)';icon='circle-slash';}
+  else{tier='Very unlikely';col='var(--slate)';icon='circle-x';}
+  if(hci<=12&&(P.verd==='eclipsing_binary_candidate'||P.verd==='false_positive_blend')){tier='Very unlikely';col='var(--slate)';icon='circle-x';}
+
+  return{hci:Math.round(hci*10)/10,tier,col,icon,subs,caveats,star,densMod,densLabel};
+}
+
+/* ════════ UI WIRING ════════ */
+const $=id=>document.getElementById(id);
+const subColor=s=> s>=0.7?'var(--emerald)': s>=0.45?'var(--amber)': s>=0.2?'var(--k)':'var(--rose)';
+
+function buildStarSeg(){
+  const seg=$('segStar');seg.innerHTML='';
+  STARS.forEach((st,i)=>{
+    const b=document.createElement('button');
+    b.setAttribute('aria-pressed',i===starIdx);
+    b.innerHTML=`<span class="dot" style="background:${st.col}"></span>${st.sp}`;
+    if(i===starIdx)b.style.background=st.col;
+    b.onclick=()=>{starIdx=i;buildStarSeg();render();};
+    seg.appendChild(b);
+  });
+}
+
+function readState(){
+  const obs=+$('secObs').value;
+  let det=+$('secDet').value; det=Math.min(det,obs);
+  $('secDet').max=obs; $('secDet').value=det;
+  return{
+    au:+$('au').value, rp:+$('rad').value, mp:+$('mass').value,
+    disp:$('disp').value, verd:$('verd').value, obs, det
+  };
+}
+
+function render(){
+  const P=readState(), R=computeHCI(P), star=R.star;
+
+  // value chips
+  $('vAu').textContent=P.au.toFixed(2)+' AU';
+  $('vR').textContent=P.rp.toFixed(2)+' R⊕';
+  $('vM').textContent=P.mp.toFixed(2)+' M⊕';
+  $('vSec').textContent=`${P.det} / ${P.obs}`;
+  const rho=(P.mp/P.rp**3); // ρ⊕
+  const band = rho>=RHO_ROCKY?' → terrestrial (+10)' : rho<RHO_VOL?' → gas-giant (−10)' : ' → intermediate (0)';
+  $('rhoHint').textContent=`Implied bulk density ≈ ${(rho*RHO_EARTH).toFixed(1)} g/cm³ (${rho.toFixed(2)} ρ⊕)${band}.`;
+  $('starHint').textContent=`${star.name} · Teff ≈ ${star.teff} K · R★ ≈ ${star.r} R⊙`;
+  const hz=R.subs[1].edges;
+  $('auHint').textContent=`Conservative HZ for this star: ${hz.iC.toFixed(2)}–${hz.oC.toFixed(2)} AU.`;
+
+  // gauge
+  const C=2*Math.PI*78;
+  $('arc').setAttribute('stroke-dasharray',C);
+  $('arc').setAttribute('stroke-dashoffset',C*(1-R.hci/100));
+  $('arc').style.stroke=R.col;
+  $('hciNum').textContent=R.hci.toFixed(1);
+  $('hciNum').style.color=R.col;
+  $('hciRng').textContent='';
+
+  const t=$('tier');
+  t.innerHTML=`<i data-lucide="${R.icon}"></i>${R.tier}`;
+  t.style.color=R.col; t.style.borderColor=R.col;
+  t.style.background='color-mix(in srgb,'+R.col+' 14%, transparent)';
+
+  // density modifier badge
+  const db=$('densBadge');
+  if(R.densMod){
+    const up=R.densMod>0, c=up?'var(--emerald)':'var(--rose)';
+    db.style.display='inline-block';
+    db.innerHTML=`<span class="densb" style="color:${c};border-color:${c};background:color-mix(in srgb,${c} 12%,transparent)">`+
+      `<i data-lucide="${up?'trending-up':'trending-down'}"></i>${up?'+':''}${R.densMod} density · ${R.densLabel}</span>`;
+  }else{db.style.display='none';db.innerHTML='';}
+
+  // sub-scores
+  const sb=$('subs');sb.innerHTML='';
+  R.subs.forEach(s=>{
+    const pct=Math.round(s.score*100), c=subColor(s.score);
+    const el=document.createElement('div');el.className='sub';
+    el.innerHTML=`
+      <div class="sub-top">
+        <span class="nm">${s.name}</span>
+        <span class="lb" style="color:${c}">${s.label}</span>
+        <span class="w">${Math.round(s.weight*100)}%</span>
+      </div>
+      <div class="bar"><i style="width:${pct}%;background:${c}"></i></div>
+      <div class="sub-x">${s.x}</div>`;
+    el.querySelector('.sub-top').onclick=()=>el.classList.toggle('open');
+    sb.appendChild(el);
+  });
+
+  // caveats
+  $('caveats').innerHTML=R.caveats.map(c=>`<li>${c}</li>`).join('');
+
+  // ── system stage viz ──
+  drawStage(P,R,hz);
+  if(window.lucide)lucide.createIcons();
+}
+
+function drawStage(P,R,hz){
+  const stage=$('stage'), W=stage.clientWidth, H=stage.clientHeight;
+  const pad=18, x0=8+ (16); // star center x
+  const maxAu=Math.max(3, hz.oO*1.15, P.au*1.1);
+  const px=au=> x0 + (au/maxAu)*(W-x0-pad);
+
+  // star
+  const sv=$('starViz'), ssz=14+(star=>0)(0)+ (STARS[starIdx].r*10);
+  const sd=Math.min(46,14+STARS[starIdx].r*16);
+  sv.style.width=sv.style.height=sd+'px';
+  sv.style.background=`radial-gradient(circle at 38% 35%, #fff, ${STARS[starIdx].col})`;
+  sv.style.boxShadow=`0 0 ${22+STARS[starIdx].r*8}px ${STARS[starIdx].col}`;
+  sv.style.left=(x0-sd/2)+'px';
+
+  // HZ band
+  const b=$('hzBand'); const xi=px(hz.iC), xo=px(hz.oC);
+  b.style.left=xi+'px'; b.style.width=Math.max(2,xo-xi)+'px';
+
+  // orbit + planet
+  const r=px(P.au)-x0;
+  const o=$('orbitViz'); o.style.width=o.style.height=(r*2)+'px';
+  o.style.left=(x0-r)+'px';
+  const pl=$('planetViz');
+  const psz=Math.max(6,Math.min(26,P.rp*8));
+  pl.style.width=pl.style.height=psz+'px';
+  pl.style.left=px(P.au)+'px';
+  // planet tint from HZ score (blue=cold, green=hz, red=hot) via its own sub-score color
+  pl.style.background=`radial-gradient(circle at 35% 32%, #fff5, ${R.subs[1].score>=0.6?'var(--emerald)':R.subs[0].score<0.2&&P.au<hz.iC?'var(--m)':R.col})`;
+
+  $('stageMeta').innerHTML=`<b>${STARS[starIdx].sp}</b>-type · ${STARS[starIdx].teff} K<br><b>${P.au.toFixed(2)}</b> AU · <b>${P.rp.toFixed(1)}</b> R⊕`;
+}
+
+/* presets */
+const PRE={
+  earth:{star:2,au:1,rp:1,mp:1,disp:'CP',verd:'planet_candidate_clean',obs:6,det:6},
+  trappist:{star:0,au:0.028,rp:0.92,mp:0.69,disp:'CP',verd:'planet_candidate_clean',obs:8,det:7},
+  hotjup:{star:3,au:0.05,rp:3.5,mp:12,disp:'CP',verd:'planet_candidate_clean',obs:4,det:4},
+  superearth:{star:1,au:0.7,rp:1.6,mp:5,disp:'PC',verd:'planet_candidate_clean',obs:5,det:4},
+  eb:{star:4,au:0.4,rp:3.4,mp:12,disp:'FP',verd:'eclipsing_binary_candidate',obs:3,det:3},
+};
+document.querySelectorAll('.presets [data-p]').forEach(btn=>{
+  btn.onclick=()=>{const p=PRE[btn.dataset.p];
+    starIdx=p.star; buildStarSeg();
+    $('au').value=p.au; $('rad').value=p.rp; $('mass').value=p.mp;
+    $('disp').value=p.disp; $('verd').value=p.verd;
+    $('secObs').value=p.obs; $('secDet').max=p.obs; $('secDet').value=p.det;
+    render();};
+});
+
+['au','rad','mass','disp','verd','secObs','secDet'].forEach(id=>{
+  $(id).addEventListener('input',render);
+});
+window.addEventListener('resize',render);
+
+buildStarSeg();
+render();
+if(window.lucide)lucide.createIcons();
+</script>
+</body>
+</html>
