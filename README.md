@@ -1,5 +1,7 @@
 # ExoWorld Habitability Tuner
 
+**Live demo: [eagnespuerto.github.io/exoworld-tuner](https://eagnespuerto.github.io/exoworld-tuner/)**
+
 ExoWorld offers insight into the possible habitability of any exoplanet you can imagine. Be it for research or for science fiction writing, this tool is handy in ensuring you are working with a planet that may or may not be habitable. It can also be used as an interactive teaching tool for science educators looking to share knowledge on how worlds can or cannot be habitable.
 
 A single-file static site — open `index.html` in any modern browser, or host it on GitHub Pages. The tuner is a UI port of the `VetStar` / `STEHM` habitability scoring engine in [eagnespuerto/vetstar](https://github.com/eagnespuerto/vetstar) (`backend/app/habitability.py`).
