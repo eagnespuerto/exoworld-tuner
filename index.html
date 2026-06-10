@@ -635,16 +635,23 @@ function drawStage(P,R,hz){
   const svg=$('stageSvg');
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
   const cy=H/2, pad=18, x0=42; // star center; offset so HZ arc curves visibly
-  const maxAu=Math.max(3, hz.oO*1.15, P.au*1.1);
-  const radPx=au=> (au/maxAu)*(W-x0-pad);
-
   const star=STARS[starIdx];
   const sd=Math.min(46,14+star.r*16);            // star display diameter
   const psz=Math.max(6,Math.min(26,P.rp*8));      // planet display diameter
 
+  // Scale to fit whichever of (orbit, optimistic-HZ outer) is largest. No
+  // fixed minimum: M-dwarf systems sit at ~0.05 AU and need a tight zoom or
+  // the planet visually overlaps the star.
+  const maxAu=Math.max(hz.oO*1.20, P.au*1.15, 0.02);
+  const radPx=au=> (au/maxAu)*(W-x0-pad);
+
   const riC=radPx(hz.iC), roC=radPx(hz.oC);
   const riO=radPx(hz.iO), roO=radPx(hz.oO);
-  const rOrb=radPx(P.au);
+  const rOrbRaw=radPx(P.au);
+  // Enforce a visual gap so the planet disc never overlaps the star disc,
+  // even when the true orbit is physically tiny (hot Jupiters, M-dwarf HZs).
+  const minSep = sd/2 + psz/2 + 4;
+  const rOrb = Math.max(rOrbRaw, minSep);
 
   // planet placed on orbit at angle 0 (along +x from star), top-down view
   const planetCx = x0 + rOrb, planetCy = cy;
