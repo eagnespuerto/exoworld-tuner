@@ -220,7 +220,43 @@
           <div class="seg spectral" id="segStar"></div>
           <div class="custom-star" id="customStar" hidden>
             <label>Teff (K)<input type="number" id="csTeff" min="2000" max="50000" step="50" value="5772"></label>
-            <label>R★ (R⊙)<input type="number" id="csR" min="0.05" max="50" step="0.01" value="1.00"></label>
+            <label>R★ (R⊙)<input type="number" id="csR" min="0.05" max="50" step="0.001" value="1.00"></label>
+          </div>
+          <div class="selrow" style="margin-top:10px">
+            <select id="knownStar">
+              <option value="">— or pick a known star (real Teff / R★) —</option>
+              <optgroup label="Sun-like (G / F)">
+                <option value="sun">Sun</option>
+                <option value="alphacenA">Alpha Centauri A</option>
+                <option value="tauceti">Tau Ceti</option>
+                <option value="cnc55">55 Cancri A</option>
+                <option value="peg51">51 Pegasi</option>
+                <option value="hd209458">HD 209458</option>
+                <option value="kepler22">Kepler-22</option>
+                <option value="kepler452">Kepler-452</option>
+              </optgroup>
+              <optgroup label="K dwarfs">
+                <option value="alphacenB">Alpha Centauri B</option>
+                <option value="eperidani">Epsilon Eridani</option>
+                <option value="kepler442">Kepler-442</option>
+              </optgroup>
+              <optgroup label="M dwarfs">
+                <option value="kepler186">Kepler-186</option>
+                <option value="toi700">TOI-700</option>
+                <option value="k218">K2-18</option>
+                <option value="lhs1140">LHS 1140</option>
+                <option value="kepler1649">Kepler-1649</option>
+                <option value="gj1214">GJ 1214</option>
+                <option value="barnard">Barnard's Star</option>
+                <option value="ross128">Ross 128</option>
+                <option value="proxima">Proxima Centauri</option>
+              </optgroup>
+              <optgroup label="Ultracool dwarfs">
+                <option value="wolf359">Wolf 359</option>
+                <option value="teegarden">Teegarden's Star</option>
+                <option value="trappist1">TRAPPIST-1</option>
+              </optgroup>
+            </select>
           </div>
           <div class="hint" id="starHint"></div>
         </div>
@@ -413,6 +449,36 @@ function teffToColor(t){
   return 'var(--o)';
 }
 
+/* Measured Teff / R★ for well-studied host stars. Picking one switches
+   the spectral-class selector to "Custom" and populates the inputs with
+   the literature values, so HZ edges and the stellar-type sub-score use
+   the *actual* star instead of a class average. */
+const KNOWN_STARS = {
+  sun:        {name:'Sun',                  teff:5772, r:1.000},
+  alphacenA:  {name:'Alpha Centauri A',     teff:5790, r:1.224},
+  tauceti:    {name:'Tau Ceti',             teff:5344, r:0.793},
+  cnc55:      {name:'55 Cancri A',          teff:5172, r:0.943},
+  peg51:      {name:'51 Pegasi',            teff:5793, r:1.237},
+  hd209458:   {name:'HD 209458',            teff:6065, r:1.203},
+  kepler22:   {name:'Kepler-22',            teff:5518, r:0.979},
+  kepler452:  {name:'Kepler-452',           teff:5757, r:1.110},
+  alphacenB:  {name:'Alpha Centauri B',     teff:5260, r:0.863},
+  eperidani:  {name:'Epsilon Eridani',      teff:5084, r:0.735},
+  kepler442:  {name:'Kepler-442',           teff:4402, r:0.598},
+  kepler186:  {name:'Kepler-186',           teff:3755, r:0.523},
+  toi700:     {name:'TOI-700',              teff:3480, r:0.420},
+  k218:       {name:'K2-18',                teff:3457, r:0.411},
+  lhs1140:    {name:'LHS 1140',             teff:3216, r:0.213},
+  kepler1649: {name:'Kepler-1649',          teff:3240, r:0.234},
+  gj1214:     {name:'GJ 1214',              teff:3250, r:0.215},
+  barnard:    {name:"Barnard's Star",       teff:3134, r:0.196},
+  ross128:    {name:'Ross 128',             teff:3192, r:0.197},
+  proxima:    {name:'Proxima Centauri',     teff:3042, r:0.154},
+  wolf359:    {name:'Wolf 359',             teff:2800, r:0.144},
+  teegarden:  {name:"Teegarden's Star",     teff:2790, r:0.107},
+  trappist1:  {name:'TRAPPIST-1',           teff:2566, r:0.119},
+};
+
 const KOPP={recent_venus:[1.776,2.136e-4,2.533e-8,-1.332e-11,-3.097e-15],
   runaway_greenhouse:[1.107,1.332e-4,1.580e-8,-8.308e-12,-1.931e-15],
   maximum_greenhouse:[0.356,6.171e-5,1.698e-9,-3.198e-12,-5.575e-16],
@@ -557,7 +623,15 @@ function buildStarSeg(){
     b.setAttribute('aria-pressed',i===starIdx);
     b.innerHTML=`<span class="dot" style="background:${st.col}"></span>${st.custom?'Custom':st.sp}`;
     if(i===starIdx)b.style.background=st.col;
-    b.onclick=()=>{starIdx=i;buildStarSeg();render();};
+    b.onclick=()=>{
+      starIdx=i;
+      if(!st.custom){
+        // reverting to a class average — drop the known-star selection & label
+        const cs=$('knownStar'); if(cs) cs.value='';
+        if(customStar) customStar.label=null;
+      }
+      buildStarSeg();render();
+    };
     seg.appendChild(b);
   });
   $('customStar').hidden = !STARS[starIdx].custom;
@@ -584,7 +658,8 @@ function render(){
   const rho=(P.mp/P.rp**3); // ρ⊕
   const band = rho>=RHO_ROCKY?' → terrestrial (+10)' : rho<RHO_VOL?' → gas-giant (−10)' : ' → intermediate (0)';
   $('rhoHint').textContent=`Implied bulk density ≈ ${(rho*RHO_EARTH).toFixed(1)} g/cm³ (${rho.toFixed(2)} ρ⊕)${band}.`;
-  $('starHint').textContent=`${star.name} · Teff ≈ ${star.teff} K · R★ ≈ ${star.r} R⊙`;
+  const starLabel = star.label || star.name;
+  $('starHint').textContent=`${starLabel} · Teff ≈ ${Math.round(star.teff)} K · R★ ≈ ${star.r} R⊙`;
   const hz=R.subs[1].edges;
   $('auHint').textContent=`Conservative HZ for this star: ${hz.iC.toFixed(2)}–${hz.oC.toFixed(2)} AU.`;
 
@@ -730,36 +805,43 @@ function drawStage(P,R,hz){
 
 /* presets — major known exoplanets + Solar System calibrators */
 const PRE={
-  earth:       {star:2, au:1.00,   rp:1.00, mp:1.00,  disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
-  venus:       {star:2, au:0.72,   rp:0.95, mp:0.82,  disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
-  mars:        {star:2, au:1.52,   rp:0.53, mp:0.107, disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
-  proxb:       {star:0, au:0.0485, rp:1.07, mp:1.27,  disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
-  trappist1b:  {star:0, au:0.0115, rp:1.12, mp:1.37,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:8},
-  trappist1c:  {star:0, au:0.0158, rp:1.10, mp:1.31,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:8},
-  trappist1d:  {star:0, au:0.0223, rp:0.79, mp:0.39,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
-  trappist1e:  {star:0, au:0.0293, rp:0.92, mp:0.69,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
-  trappist1f:  {star:0, au:0.0385, rp:1.05, mp:1.04,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
-  trappist1g:  {star:0, au:0.0468, rp:1.13, mp:1.32,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
-  trappist1h:  {star:0, au:0.0619, rp:0.76, mp:0.33,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:6},
-  kepler186f:  {star:0, au:0.43,   rp:1.17, mp:1.4,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
-  kepler442b:  {star:1, au:0.41,   rp:1.34, mp:2.3,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
-  kepler452b:  {star:2, au:1.05,   rp:1.63, mp:5.0,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
-  kepler1649c: {star:0, au:0.083,  rp:1.06, mp:1.2,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
-  toi700d:     {star:0, au:0.163,  rp:1.19, mp:1.7,   disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
-  toi700e:     {star:0, au:0.134,  rp:0.95, mp:0.8,   disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
-  k218b:       {star:0, au:0.143,  rp:2.61, mp:8.6,   disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
-  kepler22b:   {star:2, au:0.85,   rp:2.40, mp:6.0,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
-  gj1214b:     {star:0, au:0.014,  rp:2.85, mp:6.55,  disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
-  cnce:        {star:2, au:0.015,  rp:1.88, mp:7.99,  disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
-  peg51b:      {star:2, au:0.052,  rp:3.50, mp:12,    disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
-  hd209458b:   {star:2, au:0.047,  rp:3.50, mp:12,    disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
-  hotjup:      {star:3, au:0.05,   rp:3.50, mp:12,    disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
-  superearth:  {star:1, au:0.70,   rp:1.60, mp:5.0,   disp:'PC', verd:'planet_candidate_clean',        obs:5, det:4},
-  eb:          {star:4, au:0.40,   rp:3.40, mp:12,    disp:'FP', verd:'eclipsing_binary_candidate',    obs:3, det:3},
+  earth:       {kstar:'sun',        au:1.00,   rp:1.00, mp:1.00,  disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
+  venus:       {kstar:'sun',        au:0.72,   rp:0.95, mp:0.82,  disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
+  mars:        {kstar:'sun',        au:1.52,   rp:0.53, mp:0.107, disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
+  proxb:       {kstar:'proxima',    au:0.0485, rp:1.07, mp:1.27,  disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
+  trappist1b:  {kstar:'trappist1',  au:0.0115, rp:1.12, mp:1.37,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:8},
+  trappist1c:  {kstar:'trappist1',  au:0.0158, rp:1.10, mp:1.31,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:8},
+  trappist1d:  {kstar:'trappist1',  au:0.0223, rp:0.79, mp:0.39,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
+  trappist1e:  {kstar:'trappist1',  au:0.0293, rp:0.92, mp:0.69,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
+  trappist1f:  {kstar:'trappist1',  au:0.0385, rp:1.05, mp:1.04,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
+  trappist1g:  {kstar:'trappist1',  au:0.0468, rp:1.13, mp:1.32,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
+  trappist1h:  {kstar:'trappist1',  au:0.0619, rp:0.76, mp:0.33,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:6},
+  kepler186f:  {kstar:'kepler186',  au:0.43,   rp:1.17, mp:1.4,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
+  kepler442b:  {kstar:'kepler442',  au:0.41,   rp:1.34, mp:2.3,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
+  kepler452b:  {kstar:'kepler452',  au:1.05,   rp:1.63, mp:5.0,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
+  kepler1649c: {kstar:'kepler1649', au:0.083,  rp:1.06, mp:1.2,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
+  toi700d:     {kstar:'toi700',     au:0.163,  rp:1.19, mp:1.7,   disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
+  toi700e:     {kstar:'toi700',     au:0.134,  rp:0.95, mp:0.8,   disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
+  k218b:       {kstar:'k218',       au:0.143,  rp:2.61, mp:8.6,   disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
+  kepler22b:   {kstar:'kepler22',   au:0.85,   rp:2.40, mp:6.0,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
+  gj1214b:     {kstar:'gj1214',     au:0.014,  rp:2.85, mp:6.55,  disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
+  cnce:        {kstar:'cnc55',      au:0.015,  rp:1.88, mp:7.99,  disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
+  peg51b:      {kstar:'peg51',      au:0.052,  rp:3.50, mp:12,    disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
+  hd209458b:   {kstar:'hd209458',   au:0.047,  rp:3.50, mp:12,    disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
+  hotjup:      {star:3,             au:0.05,   rp:3.50, mp:12,    disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
+  superearth:  {star:1,             au:0.70,   rp:1.60, mp:5.0,   disp:'PC', verd:'planet_candidate_clean',        obs:5, det:4},
+  eb:          {star:4,             au:0.40,   rp:3.40, mp:12,    disp:'FP', verd:'eclipsing_binary_candidate',    obs:3, det:3},
 };
 $('preset').addEventListener('change',e=>{
   const p=PRE[e.target.value]; if(!p)return;
-  starIdx=p.star; buildStarSeg();
+  if(p.kstar){
+    applyKnownStar(p.kstar);          // also calls render()
+  }else{
+    starIdx=p.star;
+    $('knownStar').value='';
+    if(customStar) customStar.label=null;
+    buildStarSeg();
+  }
   $('au').value=p.au; $('rad').value=p.rp; $('mass').value=p.mp;
   $('disp').value=p.disp; $('verd').value=p.verd;
   $('secObs').value=p.obs; $('secDet').max=p.obs; $('secDet').value=p.det;
@@ -772,14 +854,30 @@ $('preset').addEventListener('change',e=>{
 
 // custom-star inputs — update the Custom STARS entry in place
 const customStar = STARS.find(s=>s.custom);
+const customIdx = STARS.indexOf(customStar);
 function syncCustom(){
   const t=Math.max(2000,Math.min(50000,+$('csTeff').value||5772));
   const r=Math.max(0.05,Math.min(50,+$('csR').value||1));
   customStar.teff=t; customStar.r=r; customStar.col=teffToColor(t);
+  // typing in the inputs implies a one-off custom star — clear the known-star dropdown
+  if($('knownStar').value) $('knownStar').value='';
   if(STARS[starIdx].custom){ buildStarSeg(); render(); }
 }
 $('csTeff').addEventListener('input',syncCustom);
 $('csR').addEventListener('input',syncCustom);
+
+function applyKnownStar(key){
+  const s=KNOWN_STARS[key]; if(!s) return;
+  customStar.teff=s.teff; customStar.r=s.r; customStar.col=teffToColor(s.teff);
+  customStar.label=s.name;
+  $('csTeff').value=s.teff;
+  $('csR').value=s.r;
+  starIdx=customIdx;
+  $('knownStar').value=key;
+  buildStarSeg();
+  render();
+}
+$('knownStar').addEventListener('change',e=>{ if(e.target.value) applyKnownStar(e.target.value); });
 
 window.addEventListener('resize',render);
 

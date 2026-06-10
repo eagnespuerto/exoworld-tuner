@@ -14,7 +14,13 @@ Presets are included for an Earth twin, TRAPPIST-1e, a hot Jupiter, a super-Eart
 
 ### Host star
 
-Pick one of the five spectral-class buttons (M / K / G / F / A) or **Custom** to type an arbitrary `Teff` and `R★`. The HZ ring, stellar-type sub-score, and the visualization's star color all update from `Teff` — handy for plugging in a specific observed star rather than a class average.
+Three ways to set the host:
+
+1. **Spectral-class buttons** (M / K / G / F / A) — uses a class-average `Teff` and `R★` (good for quick what-ifs).
+2. **Custom** — type an arbitrary `Teff` (K) and `R★` (R⊙). The HZ ring, stellar-type sub-score, and the star's rendered colour all update from `Teff`.
+3. **Known star dropdown** — picks a real host's measured `Teff` and `R★` from the literature (Sun, Proxima Centauri, TRAPPIST-1, Alpha Centauri A/B, Tau Ceti, the Kepler/TOI hosts, etc.) and switches the selector to Custom. This is the right choice when you want to speculate about hypothetical planets in a real system: pick the host, then drag the orbit/radius sliders to place a fictional world around it.
+
+Planet presets also auto-populate their real host star — picking *TRAPPIST-1e* now sets `Teff = 2566 K, R★ = 0.119 R⊙` (the actual ultracool dwarf), not the generic M-dwarf class average. This makes the HZ edges and stellar sub-score noticeably more honest for compact systems.
 
 ### System diagram
 
