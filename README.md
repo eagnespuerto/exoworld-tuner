@@ -12,6 +12,14 @@ Drag the sliders to set a hypothetical planet (orbital distance, radius, mass) a
 
 Presets are included for an Earth twin, TRAPPIST-1e, a hot Jupiter, a super-Earth, and an eclipsing-binary false positive.
 
+### Host star
+
+Pick one of the five spectral-class buttons (M / K / G / F / A) or **Custom** to type an arbitrary `Teff` and `R★`. The HZ ring, stellar-type sub-score, and the visualization's star color all update from `Teff` — handy for plugging in a specific observed star rather than a class average.
+
+### System diagram
+
+The mini-system panel above the gauge is a **top-down view of the orbital plane**. The star sits at the centre of the projection, the orbit and the conservative habitable zone are drawn as concentric circles (the HZ band literally curves around the star), and the planet is rendered as a half-lit disc with its day side facing the star. The dashed green circles mark the inner and outer conservative HZ edges from Kopparapu et al.
+
 ---
 
 ## The HCI calculation
