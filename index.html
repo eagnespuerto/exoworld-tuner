@@ -131,24 +131,24 @@
     border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;transition:.15s}
   .presets button:hover{border-color:var(--g);color:var(--g)}
 
-  /* ── system viz ── */
+  /* ── system viz (top-down orbital plane) ── */
   .stage{position:relative;height:184px;border-radius:14px;overflow:hidden;
     background:radial-gradient(120% 130% at 12% 50%, rgba(255,255,255,.04), transparent 50%),
       linear-gradient(180deg,#070a14,#0c1120);border:1px solid var(--line);margin-bottom:16px}
-  .hz-band{position:absolute;top:0;bottom:0;background:
-    linear-gradient(90deg,rgba(52,227,164,0),rgba(52,227,164,.22),rgba(52,227,164,0));
-    border-left:1px dashed rgba(52,227,164,.4);border-right:1px dashed rgba(52,227,164,.4)}
-  .hz-lbl{position:absolute;bottom:7px;font:500 9px/1 'JetBrains Mono',monospace;
-    letter-spacing:.12em;color:var(--emerald);text-transform:uppercase}
-  .star{position:absolute;left:8px;top:50%;transform:translateY(-50%);border-radius:50%;
-    filter:blur(.3px)}
-  .orbit{position:absolute;left:8px;top:50%;border:1px solid rgba(255,255,255,.09);
-    border-radius:50%;transform:translateY(-50%)}
-  .planet{position:absolute;top:50%;border-radius:50%;transform:translate(-50%,-50%);
-    box-shadow:0 0 12px -1px rgba(0,0,0,.6)}
+  .stage svg.stage-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
   .stage-meta{position:absolute;top:8px;right:11px;text-align:right;
-    font:500 9.5px/1.5 'JetBrains Mono',monospace;color:var(--muted)}
+    font:500 9.5px/1.5 'JetBrains Mono',monospace;color:var(--muted);z-index:2}
   .stage-meta b{color:var(--ink)}
+
+  /* ── custom-star inputs ── */
+  .custom-star{margin-top:9px;display:flex;gap:8px}
+  .custom-star[hidden]{display:none}
+  .custom-star label{flex:1;font:500 10px/1.2 'JetBrains Mono',monospace;color:var(--muted);
+    display:flex;flex-direction:column;gap:5px;letter-spacing:.04em;text-transform:uppercase}
+  .custom-star input{font:500 12px/1 'JetBrains Mono',monospace;padding:9px 11px;border-radius:9px;
+    border:1px solid var(--line);background:var(--panel2);color:var(--ink);width:100%;
+    text-transform:none;letter-spacing:0}
+  .custom-star input:focus{outline:none;border-color:var(--g)}
 
   /* ── result ── */
   .score-card{text-align:center;padding:8px 0 4px}
@@ -218,6 +218,10 @@
         <div class="ctl">
           <div class="ctl-top"><label><i data-lucide="sun"></i>Host star — spectral class</label></div>
           <div class="seg spectral" id="segStar"></div>
+          <div class="custom-star" id="customStar" hidden>
+            <label>Teff (K)<input type="number" id="csTeff" min="2000" max="50000" step="50" value="5772"></label>
+            <label>R★ (R⊙)<input type="number" id="csR" min="0.05" max="50" step="0.01" value="1.00"></label>
+          </div>
           <div class="hint" id="starHint"></div>
         </div>
 
@@ -332,10 +336,7 @@
       <div class="panel-b">
 
         <div class="stage" id="stage">
-          <div class="hz-band" id="hzBand"><span class="hz-lbl" style="left:4px">hz</span></div>
-          <div class="star" id="starViz"></div>
-          <div class="orbit" id="orbitViz"></div>
-          <div class="planet" id="planetViz"></div>
+          <svg class="stage-svg" id="stageSvg" preserveAspectRatio="none"></svg>
           <div class="stage-meta" id="stageMeta"></div>
         </div>
 
@@ -394,8 +395,17 @@ const STARS=[
   {sp:'G', teff:5772, r:1.00, col:'var(--g)',  name:'G dwarf (Sun-like)'},
   {sp:'F', teff:6600, r:1.30, col:'var(--f)',  name:'F dwarf'},
   {sp:'A', teff:8500, r:1.80, col:'var(--a)',  name:'A star'},
+  {sp:'★', teff:5772, r:1.00, col:'var(--g)',  name:'Custom', custom:true},
 ];
 let starIdx=2;
+function teffToColor(t){
+  if(t<3700)return 'var(--m)';
+  if(t<5000)return 'var(--k)';
+  if(t<6000)return 'var(--g)';
+  if(t<7500)return 'var(--f)';
+  if(t<10000)return 'var(--a)';
+  return 'var(--o)';
+}
 
 const KOPP={recent_venus:[1.776,2.136e-4,2.533e-8,-1.332e-11,-3.097e-15],
   runaway_greenhouse:[1.107,1.332e-4,1.580e-8,-8.308e-12,-1.931e-15],
@@ -539,11 +549,12 @@ function buildStarSeg(){
   STARS.forEach((st,i)=>{
     const b=document.createElement('button');
     b.setAttribute('aria-pressed',i===starIdx);
-    b.innerHTML=`<span class="dot" style="background:${st.col}"></span>${st.sp}`;
+    b.innerHTML=`<span class="dot" style="background:${st.col}"></span>${st.custom?'Custom':st.sp}`;
     if(i===starIdx)b.style.background=st.col;
     b.onclick=()=>{starIdx=i;buildStarSeg();render();};
     seg.appendChild(b);
   });
+  $('customStar').hidden = !STARS[starIdx].custom;
 }
 
 function readState(){
@@ -621,34 +632,87 @@ function render(){
 
 function drawStage(P,R,hz){
   const stage=$('stage'), W=stage.clientWidth, H=stage.clientHeight;
-  const pad=18, x0=8+ (16); // star center x
+  const svg=$('stageSvg');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const cy=H/2, pad=18, x0=42; // star center; offset so HZ arc curves visibly
   const maxAu=Math.max(3, hz.oO*1.15, P.au*1.1);
-  const px=au=> x0 + (au/maxAu)*(W-x0-pad);
+  const radPx=au=> (au/maxAu)*(W-x0-pad);
 
-  // star
-  const sv=$('starViz'), ssz=14+(star=>0)(0)+ (STARS[starIdx].r*10);
-  const sd=Math.min(46,14+STARS[starIdx].r*16);
-  sv.style.width=sv.style.height=sd+'px';
-  sv.style.background=`radial-gradient(circle at 38% 35%, #fff, ${STARS[starIdx].col})`;
-  sv.style.boxShadow=`0 0 ${22+STARS[starIdx].r*8}px ${STARS[starIdx].col}`;
-  sv.style.left=(x0-sd/2)+'px';
+  const star=STARS[starIdx];
+  const sd=Math.min(46,14+star.r*16);            // star display diameter
+  const psz=Math.max(6,Math.min(26,P.rp*8));      // planet display diameter
 
-  // HZ band
-  const b=$('hzBand'); const xi=px(hz.iC), xo=px(hz.oC);
-  b.style.left=xi+'px'; b.style.width=Math.max(2,xo-xi)+'px';
+  const riC=radPx(hz.iC), roC=radPx(hz.oC);
+  const riO=radPx(hz.iO), roO=radPx(hz.oO);
+  const rOrb=radPx(P.au);
 
-  // orbit + planet
-  const r=px(P.au)-x0;
-  const o=$('orbitViz'); o.style.width=o.style.height=(r*2)+'px';
-  o.style.left=(x0-r)+'px';
-  const pl=$('planetViz');
-  const psz=Math.max(6,Math.min(26,P.rp*8));
-  pl.style.width=pl.style.height=psz+'px';
-  pl.style.left=px(P.au)+'px';
-  // planet tint from HZ score (blue=cold, green=hz, red=hot) via its own sub-score color
-  pl.style.background=`radial-gradient(circle at 35% 32%, #fff5, ${R.subs[1].score>=0.6?'var(--emerald)':R.subs[0].score<0.2&&P.au<hz.iC?'var(--m)':R.col})`;
+  // planet placed on orbit at angle 0 (along +x from star), top-down view
+  const planetCx = x0 + rOrb, planetCy = cy;
+  const inHZ = R.subs[1].score>=0.6;
+  const tooHot = R.subs[1].score<0.2 && P.au<hz.iC;
+  const baseCol = inHZ ? 'var(--emerald)' : tooHot ? 'var(--m)' : R.col;
 
-  $('stageMeta').innerHTML=`<b>${STARS[starIdx].sp}</b>-type · ${STARS[starIdx].teff} K<br><b>${P.au.toFixed(2)}</b> AU · <b>${P.rp.toFixed(1)}</b> R⊕`;
+  // half-lit gradient: lit hemisphere faces the star (toward -x relative to planet)
+  const litX = planetCx - psz/2, darkX = planetCx + psz/2;
+
+  const ringMid=(riC+roC)/2, ringW=Math.max(2,roC-riC);
+  const ringMidO=(riO+roO)/2, ringWO=Math.max(2,roO-riO);
+
+  // HZ label sits where the inner ring meets the equator (right side of star, just inside CHZ)
+  const hzLblX = x0 + (riC+roC)/2;
+
+  svg.innerHTML = `
+    <defs>
+      <radialGradient id="starG" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="55%" stop-color="${star.col}" stop-opacity="0.95"/>
+        <stop offset="100%" stop-color="${star.col}" stop-opacity="0.85"/>
+      </radialGradient>
+      <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%"  stop-color="${star.col}" stop-opacity="0.55"/>
+        <stop offset="45%" stop-color="${star.col}" stop-opacity="0.18"/>
+        <stop offset="100%" stop-color="${star.col}" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="planetG" x1="${litX}" y1="${cy}" x2="${darkX}" y2="${cy}" gradientUnits="userSpaceOnUse">
+        <stop offset="0%"  stop-color="#ffffff" stop-opacity="0.55"/>
+        <stop offset="35%" stop-color="${baseCol}" stop-opacity="1"/>
+        <stop offset="100%" stop-color="#0a0e1a" stop-opacity="0.85"/>
+      </linearGradient>
+    </defs>
+
+    <!-- optimistic HZ (faint outer halo ring) -->
+    <circle cx="${x0}" cy="${cy}" r="${ringMidO}" fill="none"
+      stroke="rgba(52,227,164,0.10)" stroke-width="${ringWO}"/>
+
+    <!-- conservative HZ ring (the curved green band) -->
+    <circle cx="${x0}" cy="${cy}" r="${ringMid}" fill="none"
+      stroke="rgba(52,227,164,0.32)" stroke-width="${ringW}"/>
+
+    <!-- HZ edge guides (dashed) -->
+    <circle cx="${x0}" cy="${cy}" r="${riC}" fill="none"
+      stroke="rgba(52,227,164,0.55)" stroke-width="1" stroke-dasharray="3 4"/>
+    <circle cx="${x0}" cy="${cy}" r="${roC}" fill="none"
+      stroke="rgba(52,227,164,0.55)" stroke-width="1" stroke-dasharray="3 4"/>
+
+    <!-- orbit ring -->
+    <circle cx="${x0}" cy="${cy}" r="${rOrb}" fill="none"
+      stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+
+    <!-- star glow + body -->
+    <circle cx="${x0}" cy="${cy}" r="${sd*1.7}" fill="url(#starGlow)"/>
+    <circle cx="${x0}" cy="${cy}" r="${sd/2}"   fill="url(#starG)"/>
+
+    <!-- planet (top-down, lit side faces star) -->
+    <circle cx="${planetCx}" cy="${planetCy}" r="${psz/2}" fill="url(#planetG)"
+      stroke="rgba(0,0,0,0.35)" stroke-width="0.5"/>
+
+    <!-- HZ label along the equator inside the band -->
+    <text x="${hzLblX}" y="${H-9}" fill="rgba(52,227,164,0.85)"
+      font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1.5"
+      text-anchor="middle">HZ</text>
+  `;
+
+  $('stageMeta').innerHTML=`<b>${star.custom?'★':star.sp}</b>-type · ${Math.round(star.teff)} K<br><b>${P.au.toFixed(2)}</b> AU · <b>${P.rp.toFixed(1)}</b> R⊕`;
 }
 
 /* presets — major known exoplanets + Solar System calibrators */
@@ -688,6 +752,18 @@ $('preset').addEventListener('change',e=>{
 ['au','rad','mass','disp','verd','secObs','secDet'].forEach(id=>{
   $(id).addEventListener('input',render);
 });
+
+// custom-star inputs — update the Custom STARS entry in place
+const customStar = STARS.find(s=>s.custom);
+function syncCustom(){
+  const t=Math.max(2000,Math.min(50000,+$('csTeff').value||5772));
+  const r=Math.max(0.05,Math.min(50,+$('csR').value||1));
+  customStar.teff=t; customStar.r=r; customStar.col=teffToColor(t);
+  if(STARS[starIdx].custom){ buildStarSeg(); render(); }
+}
+$('csTeff').addEventListener('input',syncCustom);
+$('csR').addEventListener('input',syncCustom);
+
 window.addEventListener('resize',render);
 
 buildStarSeg();
