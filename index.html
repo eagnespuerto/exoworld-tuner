@@ -20,13 +20,37 @@
   :root{
     --bg:#0a0e1a; --bg2:#0f1424; --panel:#141a2e; --panel2:#1b2238;
     --line:#283150; --ink:#eef2ff; --muted:#9aa6c8; --faint:#5e6a8f;
-    /* spectral ramp — vibrant + diverse, mapped to Teff */
+    /* spectral ramp — vibrant + diverse, mapped to Teff
+       (intentionally NOT overridden by themes — these are data colors) */
     --o:#7aa2ff; --b:#a5c7ff; --a:#e8eeff; --f:#fff4d6; --g:#ffd76b;
     --k:#ff9d4d; --m:#ff5d5d;
     --emerald:#34e3a4; --amber:#ffc24b; --rose:#ff5d7a; --slate:#7b88ad;
     --violet:#b079ff;
     --shadow:0 18px 50px -20px rgba(0,0,0,.7);
   }
+  /* ── theme overrides — chrome only, stage is locked ── */
+  body[data-theme="black"]{
+    --bg:#000000; --bg2:#050505; --panel:#0a0a0a; --panel2:#111111;
+    --line:#1f1f1f; --ink:#f0f0f0; --muted:#9a9a9a; --faint:#5a5a5a;
+    --shadow:0 18px 50px -20px rgba(0,0,0,.9);
+  }
+  body[data-theme="warm"]{
+    --bg:#1f1812; --bg2:#251c14; --panel:#2d2218; --panel2:#372a1c;
+    --line:#4a3823; --ink:#fbe6c8; --muted:#bfa284; --faint:#8c7458;
+    --shadow:0 18px 50px -20px rgba(20,12,4,.65);
+  }
+  body[data-theme="light"]{
+    --bg:#f5f6fb; --bg2:#eceff8; --panel:#ffffff; --panel2:#f0f3fb;
+    --line:#dde2ef; --ink:#0d1424; --muted:#4d5773; --faint:#8a93b0;
+    --shadow:0 14px 36px -18px rgba(40,55,90,.18);
+  }
+  body[data-theme="light"] h1 .glow{
+    background:linear-gradient(92deg,#c08415,#c05a18,#c0303a);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  body[data-theme="light"] .sub a{color:#a5710d;border-bottom-color:#a5710d}
+  body[data-theme="light"]::before,
+  body[data-theme="warm"]::before{opacity:0}  /* hide starfield on bright themes */
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
   body{
@@ -131,14 +155,27 @@
     border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;transition:.15s}
   .presets button:hover{border-color:var(--g);color:var(--g)}
 
-  /* ── system viz (top-down orbital plane) ── */
+  /* ── system viz (top-down orbital plane) ──
+     Stage is intentionally LOCKED to the dark observatory look across all
+     themes — space doesn't have a light mode. */
   .stage{position:relative;height:184px;border-radius:14px;overflow:hidden;
     background:radial-gradient(120% 130% at 12% 50%, rgba(255,255,255,.04), transparent 50%),
-      linear-gradient(180deg,#070a14,#0c1120);border:1px solid var(--line);margin-bottom:16px}
+      linear-gradient(180deg,#070a14,#0c1120);
+    border:1px solid #283150;margin-bottom:16px}
   .stage svg.stage-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
   .stage-meta{position:absolute;top:8px;right:11px;text-align:right;
-    font:500 9.5px/1.5 'JetBrains Mono',monospace;color:var(--muted);z-index:2}
-  .stage-meta b{color:var(--ink)}
+    font:500 9.5px/1.5 'JetBrains Mono',monospace;color:#9aa6c8;z-index:2}
+  .stage-meta b{color:#eef2ff}
+
+  /* ── theme switch ── */
+  .theme-switch{display:inline-flex;gap:3px;padding:4px;border:1px solid var(--line);
+    border-radius:99px;background:var(--panel2);align-self:flex-start;margin-top:4px}
+  .theme-switch button{width:30px;height:30px;border:none;border-radius:50%;
+    background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center;
+    transition:.15s}
+  .theme-switch button:hover{color:var(--ink)}
+  .theme-switch button[aria-pressed="true"]{background:var(--g);color:#0a0e1a}
+  .theme-switch svg{width:14px;height:14px}
 
   /* ── custom-star inputs ── */
   .custom-star{margin-top:9px;display:flex;gap:8px}
@@ -206,6 +243,12 @@
         <strong>Habitability Chance Index</strong> recomputes live, using VetStar's six-component
         scoring from <a href="https://github.com/eagnespuerto/vetstar" target="_blank" rel="noopener">eagnespuerto/vetstar</a>.</p>
     </div>
+    <div class="theme-switch" id="themeSwitch" role="group" aria-label="Color theme">
+      <button data-theme="night" title="Night (default)"><i data-lucide="moon"></i></button>
+      <button data-theme="black" title="Black (OLED)"><i data-lucide="circle"></i></button>
+      <button data-theme="warm"  title="Warm sepia"><i data-lucide="flame"></i></button>
+      <button data-theme="light" title="Light"><i data-lucide="sun"></i></button>
+    </div>
   </header>
 
   <div class="grid">
@@ -264,7 +307,7 @@
         <div class="ctl">
           <div class="ctl-top"><label><i data-lucide="ruler"></i>Orbital distance</label>
             <span class="val" id="vAu">1.00 AU</span></div>
-          <input type="range" id="au" min="0.05" max="3" step="0.01" value="1">
+          <input type="range" id="au" min="0.005" max="5" step="0.001" value="1">
           <div class="hint" id="auHint"></div>
         </div>
 
@@ -630,11 +673,25 @@ function buildStarSeg(){
         const cs=$('knownStar'); if(cs) cs.value='';
         if(customStar) customStar.label=null;
       }
+      snapToHZ();
+      $('preset').value='';   // diverged from any planet preset
       buildStarSeg();render();
     };
     seg.appendChild(b);
   });
   $('customStar').hidden = !STARS[starIdx].custom;
+}
+
+/* Move the AU slider to the conservative-HZ midpoint for the currently
+   selected star. Triggered whenever the *star* changes on its own (button
+   or known-star dropdown) so the visualization starts on a habitable orbit. */
+function snapToHZ(){
+  const star=STARS[starIdx];
+  const lr=star.r*star.r*(star.teff/5778)**4, sq=Math.sqrt(Math.max(lr,0.01));
+  const iC=HZ_I_CHZ*sq, oC=HZ_O_CHZ*sq;
+  const auMid=(iC+oC)/2;
+  const auEl=$('au');
+  auEl.value=Math.min(+auEl.max, Math.max(+auEl.min, auMid));
 }
 
 function readState(){
@@ -651,7 +708,8 @@ function render(){
   const P=readState(), R=computeHCI(P), star=R.star;
 
   // value chips
-  $('vAu').textContent=P.au.toFixed(2)+' AU';
+  const auFmt = a => a<0.1 ? a.toFixed(3) : a.toFixed(2);
+  $('vAu').textContent=auFmt(P.au)+' AU';
   $('vR').textContent=P.rp.toFixed(2)+' R⊕';
   $('vM').textContent=P.mp.toFixed(2)+' M⊕';
   $('vSec').textContent=`${P.det} / ${P.obs}`;
@@ -800,7 +858,8 @@ function drawStage(P,R,hz){
       text-anchor="middle">HZ</text>
   `;
 
-  $('stageMeta').innerHTML=`<b>${star.custom?'★':star.sp}</b>-type · ${Math.round(star.teff)} K<br><b>${P.au.toFixed(2)}</b> AU · <b>${P.rp.toFixed(1)}</b> R⊕`;
+  const stageAu = P.au<0.1 ? P.au.toFixed(3) : P.au.toFixed(2);
+  $('stageMeta').innerHTML=`<b>${star.custom?'★':star.sp}</b>-type · ${Math.round(star.teff)} K<br><b>${stageAu}</b> AU · <b>${P.rp.toFixed(1)}</b> R⊕`;
 }
 
 /* presets — major known exoplanets + Solar System calibrators */
@@ -835,22 +894,40 @@ const PRE={
 $('preset').addEventListener('change',e=>{
   const p=PRE[e.target.value]; if(!p)return;
   if(p.kstar){
-    applyKnownStar(p.kstar);          // also calls render()
+    applyKnownStar(p.kstar,{skipSnap:true, fromPreset:true});
   }else{
     starIdx=p.star;
     $('knownStar').value='';
     if(customStar) customStar.label=null;
-    buildStarSeg();
   }
   $('au').value=p.au; $('rad').value=p.rp; $('mass').value=p.mp;
   $('disp').value=p.disp; $('verd').value=p.verd;
   $('secObs').value=p.obs; $('secDet').max=p.obs; $('secDet').value=p.det;
-  render();
+  buildStarSeg(); render();
 });
 
 ['au','rad','mass','disp','verd','secObs','secDet'].forEach(id=>{
-  $(id).addEventListener('input',render);
+  $(id).addEventListener('input',()=>{
+    // Any manual tweak to a planetary observable means we've diverged from
+    // the active preset — revert the dropdown so the UI doesn't lie about
+    // which template is in effect.
+    if($('preset').value) $('preset').value='';
+    render();
+  });
 });
+
+/* ── theme switcher ── (chrome only — the stage is locked to dark) */
+(function initThemes(){
+  const btns = document.querySelectorAll('#themeSwitch button');
+  function set(t){
+    document.body.setAttribute('data-theme', t);
+    btns.forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.theme===t)));
+    try{ localStorage.setItem('exoworld-theme', t); }catch(e){}
+  }
+  let saved=null; try{ saved=localStorage.getItem('exoworld-theme'); }catch(e){}
+  set(saved && ['night','black','warm','light'].includes(saved) ? saved : 'night');
+  btns.forEach(b=>b.addEventListener('click',()=>set(b.dataset.theme)));
+})();
 
 // custom-star inputs — update the Custom STARS entry in place
 const customStar = STARS.find(s=>s.custom);
@@ -866,7 +943,7 @@ function syncCustom(){
 $('csTeff').addEventListener('input',syncCustom);
 $('csR').addEventListener('input',syncCustom);
 
-function applyKnownStar(key){
+function applyKnownStar(key, opts={}){
   const s=KNOWN_STARS[key]; if(!s) return;
   customStar.teff=s.teff; customStar.r=s.r; customStar.col=teffToColor(s.teff);
   customStar.label=s.name;
@@ -874,8 +951,11 @@ function applyKnownStar(key){
   $('csR').value=s.r;
   starIdx=customIdx;
   $('knownStar').value=key;
-  buildStarSeg();
-  render();
+  if(!opts.skipSnap) snapToHZ();
+  if(!opts.fromPreset){
+    $('preset').value='';   // diverged from any planet preset
+    buildStarSeg(); render();
+  }
 }
 $('knownStar').addEventListener('change',e=>{ if(e.target.value) applyKnownStar(e.target.value); });
 

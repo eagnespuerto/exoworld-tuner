@@ -10,7 +10,20 @@ A single-file static site — open `index.html` in any modern browser, or host i
 
 Drag the sliders to set a hypothetical planet (orbital distance, radius, mass) and pick a host star spectral class plus pipeline/disposition flags. The **Habitability Chance Index (HCI)** recomputes live, breaking the result into six weighted sub-scores and a density modifier.
 
-Presets are included for an Earth twin, TRAPPIST-1e, a hot Jupiter, a super-Earth, and an eclipsing-binary false positive.
+Presets are included for an Earth twin, the full TRAPPIST-1 system, a hot Jupiter, a super-Earth, and an eclipsing-binary false positive.
+
+### Themes
+
+The header has a four-way theme switch:
+
+| Theme  | Use case                                       |
+|--------|------------------------------------------------|
+| Night  | Default — observatory dark palette             |
+| Black  | OLED-friendly pure black                       |
+| Warm   | Sepia / paper-lamp tones for low-light reading |
+| Light  | Daytime / high-contrast monitors               |
+
+The chosen theme is persisted in `localStorage`. The system-diagram stage stays dark in every theme — space doesn't have a light mode, and locking it preserves the meaning of the spectral colour ramp.
 
 ### Host star
 
@@ -21,6 +34,12 @@ Three ways to set the host:
 3. **Known star dropdown** — picks a real host's measured `Teff` and `R★` from the literature (Sun, Proxima Centauri, TRAPPIST-1, Alpha Centauri A/B, Tau Ceti, the Kepler/TOI hosts, etc.) and switches the selector to Custom. This is the right choice when you want to speculate about hypothetical planets in a real system: pick the host, then drag the orbit/radius sliders to place a fictional world around it.
 
 Planet presets also auto-populate their real host star — picking *TRAPPIST-1e* now sets `Teff = 2566 K, R★ = 0.119 R⊙` (the actual ultracool dwarf), not the generic M-dwarf class average. This makes the HZ edges and stellar sub-score noticeably more honest for compact systems.
+
+Whenever you change *just the star* (a spectral button or a known-star pick — not a full planet preset), the orbital-distance slider snaps to the centre of that star's conservative HZ. So the diagram opens on a habitable orbit by default, and you can drag inward/outward from a sensible starting point.
+
+### Preset auto-revert
+
+The "known exoplanet preset" dropdown is a *snapshot*. The moment you tweak any planetary observable (orbit, radius, mass, disposition, vetting flag, sectors) the dropdown reverts to "— select a template —", so the UI never claims you're still looking at TRAPPIST-1e once you've moved the sliders.
 
 ### System diagram
 
