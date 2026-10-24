@@ -1,5 +1,11 @@
 # ExoWorld Habitability Tuner
 
+[![license](https://img.shields.io/badge/license-CC0-blue)](LICENSE.md)
+[![made with](https://img.shields.io/badge/made%20with-HTML5-E34F26?logo=html5&logoColor=white)](https://github.com/eagnespuerto/exoworld-tuner)
+[![website](https://img.shields.io/badge/website-live-brightgreen)](https://eagnespuerto.github.io/exoworld-tuner/)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-support%20me-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/eagnespuerto)
+[![Linktree](https://img.shields.io/badge/Linktree-soitsagnes-43E55E?logo=linktree&logoColor=white)](https://linktr.ee/soitsagnes)
+
 **Live demo: [eagnespuerto.github.io/exoworld-tuner](https://eagnespuerto.github.io/exoworld-tuner/)**
 
 ExoWorld offers insight into the possible habitability of any exoplanet you can imagine. Be it for research or for science fiction writing, this tool is handy in ensuring you are working with a planet that may or may not be habitable. It can also be used as an interactive teaching tool for science educators looking to share knowledge on how worlds can or cannot be habitable.
