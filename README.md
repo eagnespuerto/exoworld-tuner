@@ -140,7 +140,7 @@ density factor:
 HZ edges scale with luminosity, `L★ = R★² · (Teff / 5778 K)⁴`:
 
 ```
-edge(au) = k · √max(L★, 0.01)
+edge(au) = k · √L★
 ```
 
 with `k` = 0.75 (recent Venus), 0.95 (runaway greenhouse), 1.676 (maximum
@@ -255,10 +255,13 @@ blend, the HCI is capped at **12**.
   a first-order estimate, **not** a vetting verdict.
 - M dwarfs are penalised on purpose. STEHM is not calibrated for M-dwarf
   XUV, and the safe size there may be above `0.8 R⊕`.
-- The HZ formula floors luminosity at 0.01 L⊙, as VetStar does. For hosts
-  dimmer than that (Proxima, TRAPPIST-1) the HZ is drawn farther out than
-  Kopparapu's flux limits would put it, and their HZ planets score "too hot".
-  ExoWorld keeps this so its numbers match VetStar's.
+- The HZ edges use fixed Solar-System distance ratios scaled by `√L★`, not
+  the full Teff-dependent Kopparapu flux limits. Around cool stars this is
+  an approximation.
+- Earlier versions floored luminosity at 0.01 L⊙, which pushed the HZ of
+  Proxima and TRAPPIST-1 outward and scored their HZ planets "too hot".
+  ExoWorld drops the floor, matching
+  [eagnespuerto/vetstar#68](https://github.com/eagnespuerto/vetstar/pull/68).
 
 ## References
 

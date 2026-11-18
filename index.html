@@ -476,7 +476,8 @@ const KNOWN_STARS={
 };
 
 function hzEdges(teff,rstar){
-  const lr=rstar*rstar*(teff/5778)**4, sq=Math.sqrt(Math.max(lr,0.01));
+  // no 0.01 L⊙ floor: it pushed dim-star HZs outward (fixed in eagnespuerto/vetstar#68)
+  const lr=rstar*rstar*(teff/5778)**4, sq=Math.sqrt(Math.max(lr,0));
   return{iO:HZ_I_OHZ*sq,oO:HZ_O_OHZ*sq,iC:HZ_I_CHZ*sq,oC:HZ_O_CHZ*sq};
 }
 
@@ -624,7 +625,6 @@ function computeHCI(P){
 
   const caveats=[];
   if(densLabel) caveats.push(`Bulk-density modifier: ${densMod>0?'+':''}${densMod} pts (${densLabel} density). Densities ≳ 3.3 g/cm³ add 10; ≲ 2.2 g/cm³ subtract 10.`);
-  if(lum<0.01) caveats.push(`This star is ${lum.toPrecision(2)} L⊙. The HZ formula floors luminosity at 0.01 L⊙ (as VetStar does), so the HZ is drawn farther out than Kopparapu's flux limits would put it.`);
   if(star.teff<3700) caveats.push('STEHM is calibrated for Sun-like stars. M-dwarf XUV is harsher, so the safe size may be above 0.8 R⊕.');
   if(P.rp>=0.7&&P.rp<0.8) caveats.push('The planet is in the STEHM marginal zone (0.7–0.8 R⊕). Retention depends on carbon inventory, heat-producing elements and core fraction (Hill et al. 2026 §5.1–5.4).');
   if(['FP','FA'].includes(P.disp)) caveats.push(`ExoFOP lists this as ${P.disp} (false ${P.disp==='FP'?'positive':'alarm'}). HCI v2 does not score the disposition, so check it before trusting this number.`);
