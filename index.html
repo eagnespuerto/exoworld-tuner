@@ -3,229 +3,179 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Exoworld — Habitability Tuner</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffd76b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='3'/><circle cx='19' cy='5' r='2'/><circle cx='5' cy='19' r='2'/><path d='M10.4 21.9a10 10 0 0 0 9.941-15.416'/><path d='M13.5 2.1a10 10 0 0 0-9.841 15.416'/></svg>">
-<script src="https://unpkg.com/lucide@latest"></script>
+<title>ExoWorld Habitability Tuner</title>
+<meta name="description" content="Build a planet, pick a host star, and see its Habitability Chance Index (HCI v2) from VetStar, worked out in your browser.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E17564' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='3'/><circle cx='19' cy='5' r='2'/><circle cx='5' cy='19' r='2'/><path d='M10.4 21.9a10 10 0 0 0 9.941-15.416'/><path d='M13.5 2.1a10 10 0 0 0-9.841 15.416'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 <style>
-  /* ─────────────────────────────────────────────────────────────
-     EXOWORLD — a Habitability Chance Index tuner
-     Palette: deep observatory night + a vibrant spectral-class
-     ramp (O→M) used as the page's organizing color system, so the
-     vibrancy is *meaningful* (it maps to real stellar temperature),
-     not decorative.
-     Type: "Space Grotesk" display + "Inter" body + "JetBrains Mono" data.
-  ───────────────────────────────────────────────────────────────*/
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
-
+  /* ExoWorld design system: see DESIGN.md.
+     Brand: navy #09122C, wine #872341, crimson #BE3144, salmon #E17564.
+     Font: Manrope only. */
   :root{
-    --bg:#0a0e1a; --bg2:#0f1424; --panel:#141a2e; --panel2:#1b2238;
-    --line:#283150; --ink:#eef2ff; --muted:#9aa6c8; --faint:#5e6a8f;
-    /* spectral ramp — vibrant + diverse, mapped to Teff
-       (intentionally NOT overridden by themes — these are data colors) */
+    --bg:#09122C; --surface:#0F1A3A; --surface-2:#16234A; --line:#26345F;
+    --ink:#F6ECE8; --muted:#B9B3C6; --faint:#8F8BA6;
+    --primary:#E17564; --on-primary:#09122C; --link:#EE9A8B;
+    --brand-deep:#872341; --brand:#BE3144; --salmon:#E17564; --navy:#09122C;
+    --tide:#5CC8B0; --ochre:#E8B25A; --poor:#E17564; --dust:#9A97B0;
+    --shadow:0 20px 48px -28px rgba(0,0,0,.8);
+    /* spectral ramp: data colours, never themed */
     --o:#7aa2ff; --b:#a5c7ff; --a:#e8eeff; --f:#fff4d6; --g:#ffd76b;
     --k:#ff9d4d; --m:#ff5d5d;
-    --emerald:#34e3a4; --amber:#ffc24b; --rose:#ff5d7a; --slate:#7b88ad;
-    --violet:#b079ff;
-    --shadow:0 18px 50px -20px rgba(0,0,0,.7);
+    color-scheme:dark;
   }
-  /* ── theme overrides — chrome only, stage is locked ── */
-  body[data-theme="black"]{
-    --bg:#000000; --bg2:#050505; --panel:#0a0a0a; --panel2:#111111;
-    --line:#1f1f1f; --ink:#f0f0f0; --muted:#9a9a9a; --faint:#5a5a5a;
-    --shadow:0 18px 50px -20px rgba(0,0,0,.9);
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#FBF3F0; --surface:#FFFFFF; --surface-2:#F5E6E1; --line:#E6D2CB;
+      --ink:#09122C; --muted:#4E5470; --faint:#62667F;
+      --primary:#BE3144; --on-primary:#FFFFFF; --link:#872341;
+      --tide:#1C7462; --ochre:#8A5800; --poor:#BE3144; --dust:#5B5F78;
+      --shadow:0 18px 40px -26px rgba(9,18,44,.25);
+      color-scheme:light;
+    }
   }
-  body[data-theme="warm"]{
-    --bg:#1f1812; --bg2:#251c14; --panel:#2d2218; --panel2:#372a1c;
-    --line:#4a3823; --ink:#fbe6c8; --muted:#bfa284; --faint:#8c7458;
-    --shadow:0 18px 50px -20px rgba(20,12,4,.65);
+  :root[data-theme="light"]{
+    --bg:#FBF3F0; --surface:#FFFFFF; --surface-2:#F5E6E1; --line:#E6D2CB;
+    --ink:#09122C; --muted:#4E5470; --faint:#62667F;
+    --primary:#BE3144; --on-primary:#FFFFFF; --link:#872341;
+    --tide:#1C7462; --ochre:#8A5800; --poor:#BE3144; --dust:#5B5F78;
+    --shadow:0 18px 40px -26px rgba(9,18,44,.25);
+    color-scheme:light;
   }
-  body[data-theme="light"]{
-    --bg:#f5f6fb; --bg2:#eceff8; --panel:#ffffff; --panel2:#f0f3fb;
-    --line:#dde2ef; --ink:#0d1424; --muted:#4d5773; --faint:#8a93b0;
-    --shadow:0 14px 36px -18px rgba(40,55,90,.18);
-  }
-  body[data-theme="light"] h1 .glow{
-    background:linear-gradient(92deg,#c08415,#c05a18,#c0303a);
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-  }
-  body[data-theme="light"] .sub a{color:#a5710d;border-bottom-color:#a5710d}
-  body[data-theme="light"]::before,
-  body[data-theme="warm"]::before{opacity:0}  /* hide starfield on bright themes */
+
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
-  body{
-    background:
-      radial-gradient(1200px 700px at 78% -10%, rgba(122,162,255,.10), transparent 60%),
-      radial-gradient(900px 600px at 8% 110%, rgba(176,121,255,.10), transparent 55%),
-      var(--bg);
-    color:var(--ink); font-family:'Inter',system-ui,sans-serif;
-    line-height:1.5; -webkit-font-smoothing:antialiased; min-height:100vh;
-  }
-  /* faint starfield */
-  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
-    background-image:
-      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,.55), transparent),
-      radial-gradient(1px 1px at 70% 60%, rgba(255,255,255,.4), transparent),
-      radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,.35), transparent),
-      radial-gradient(1px 1px at 85% 20%, rgba(255,255,255,.45), transparent),
-      radial-gradient(1px 1px at 55% 15%, rgba(255,255,255,.3), transparent),
-      radial-gradient(1px 1px at 12% 70%, rgba(255,255,255,.4), transparent);
-    opacity:.5;}
-  .wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:28px 22px 70px}
+  body{background:var(--bg);color:var(--ink);font-family:'Manrope',system-ui,sans-serif;
+    font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
+  .num-t{font-variant-numeric:tabular-nums}
+  a{color:var(--link)}
+  :focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:6px}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 16px 64px}
 
-  /* ── header ── */
-  header{display:flex;align-items:flex-end;justify-content:space-between;
-    gap:24px;flex-wrap:wrap;margin-bottom:26px;padding-bottom:22px;
-    border-bottom:1px solid var(--line)}
+  /* header */
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;
+    flex-wrap:wrap;margin-bottom:24px}
   .brand{display:flex;align-items:center;gap:14px}
-  .mark{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;
-    background:conic-gradient(from 210deg,var(--o),var(--g),var(--k),var(--m),var(--violet),var(--o));
-    box-shadow:0 0 26px -4px rgba(255,157,77,.5)}
-  .mark svg{width:24px;height:24px;color:#0a0e1a}
-  .eyebrow{font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.32em;
+  .mark{width:48px;height:48px;border-radius:14px;flex:none;display:grid;place-items:center;
+    background:linear-gradient(140deg,var(--brand-deep),var(--brand) 55%,var(--salmon));
+    color:#FFF5F1}
+  .mark svg{width:24px;height:24px}
+  .eyebrow{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+  h1{font-weight:800;font-size:clamp(28px,4.2vw,44px);letter-spacing:-.02em;line-height:1.05;margin-top:4px}
+  h1 span{color:var(--primary)}
+  .lede{color:var(--muted);max-width:560px;margin-top:12px}
+  .v2note{display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:6px 12px;
+    border-radius:99px;border:1px solid var(--line);background:var(--surface);font-size:12.5px;color:var(--muted)}
+  .v2note b{color:var(--ink);font-weight:700}
+  .v2note svg{width:14px;height:14px;flex:none;color:var(--primary)}
+  .theme-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:99px;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;
+    font:600 12.5px/1 'Manrope',sans-serif}
+  .theme-btn:hover{border-color:var(--primary)}
+  .theme-btn svg{width:15px;height:15px}
+
+  /* layout */
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px;align-items:start}
+  @media(max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);min-width:0}
+  .panel-h{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line)}
+  .panel-h svg{width:16px;height:16px;color:var(--primary)}
+  .panel-h h2{font-size:15px;font-weight:700}
+  .panel-h .tag{margin-left:auto;font-size:10.5px;font-weight:600;letter-spacing:.14em;
     text-transform:uppercase;color:var(--faint)}
-  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(26px,4vw,40px);
-    letter-spacing:-.02em;line-height:1.02;margin-top:5px}
-  h1 .glow{background:linear-gradient(92deg,var(--g),var(--k),var(--m));
-    -webkit-background-clip:text;background-clip:text;color:transparent}
-  .sub{color:var(--muted);font-size:13.5px;max-width:430px;margin-top:9px}
-  .sub a{color:var(--g);text-decoration:none;border-bottom:1px dotted var(--g)}
-
-  /* ── layout ── */
-  .grid{display:grid;grid-template-columns:1fr 380px;gap:22px;align-items:start}
-  @media(max-width:880px){.grid{grid-template-columns:1fr}}
-  .panel{background:linear-gradient(180deg,var(--panel),var(--bg2));
-    border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
-  .panel-h{display:flex;align-items:center;gap:9px;padding:16px 20px;
-    border-bottom:1px solid var(--line)}
-  .panel-h svg{width:16px;height:16px;color:var(--g)}
-  .panel-h h2{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:500;
-    letter-spacing:.02em}
-  .panel-h .tag{margin-left:auto;font:500 10px/1 'JetBrains Mono',monospace;
-    letter-spacing:.18em;color:var(--faint);text-transform:uppercase}
   .panel-b{padding:18px 20px}
+  .group{padding-bottom:18px;margin-bottom:18px;border-bottom:1px dashed var(--line)}
+  .group:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .group-t{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:12px}
 
-  /* ── controls ── */
-  .ctl{margin-bottom:19px}
+  /* controls */
+  .ctl{margin-bottom:16px}
   .ctl:last-child{margin-bottom:0}
-  .ctl-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px}
-  .ctl-top label{font-size:12.5px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:7px}
-  .ctl-top label svg{width:13px;height:13px;color:var(--faint)}
-  .val{font:700 13px/1 'JetBrains Mono',monospace;color:var(--g);
-    background:rgba(255,215,107,.09);padding:3px 8px;border-radius:7px;
-    border:1px solid rgba(255,215,107,.18)}
-  .hint{font-size:11px;color:var(--faint);margin-top:5px}
-  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
-    border-radius:99px;background:var(--panel2);outline:none;cursor:pointer}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;
-    border-radius:50%;background:var(--ink);border:3px solid var(--g);cursor:pointer;
-    box-shadow:0 2px 8px rgba(0,0,0,.5);transition:transform .12s}
-  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
-  input[type=range]::-moz-range-thumb{width:17px;height:17px;border-radius:50%;
-    background:var(--ink);border:3px solid var(--g);cursor:pointer}
-  input[type=range]:focus-visible::-webkit-slider-thumb{outline:2px solid var(--o);outline-offset:2px}
+  .ctl-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .ctl-top label,.ctl-top .lbl{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:7px}
+  .ctl-top svg{width:14px;height:14px;color:var(--faint)}
+  .val{font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--primary);
+    background:color-mix(in srgb,var(--primary) 12%,transparent);padding:3px 9px;border-radius:8px;white-space:nowrap}
+  .hint{font-size:11.5px;color:var(--faint);margin-top:6px}
+  input[type=range]{--fill:50%;-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:99px;
+    background:linear-gradient(to right,var(--primary) var(--fill),var(--surface-2) var(--fill));cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+    background:var(--surface);border:3px solid var(--primary);box-shadow:0 2px 6px rgba(0,0,0,.35)}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--surface);border:3px solid var(--primary)}
+  input[type=range]:disabled{opacity:.4;cursor:not-allowed}
 
-  .seg{display:flex;gap:6px;flex-wrap:wrap}
-  .seg button{flex:1;min-width:54px;font:500 11.5px/1 'JetBrains Mono',monospace;
-    padding:9px 4px;border-radius:9px;border:1px solid var(--line);
-    background:var(--panel2);color:var(--muted);cursor:pointer;transition:.15s;
-    display:flex;flex-direction:column;align-items:center;gap:4px}
-  .seg button .dot{width:9px;height:9px;border-radius:50%}
-  .seg button:hover{border-color:var(--faint);color:var(--ink)}
-  .seg button[aria-pressed=true]{color:#0a0e1a;font-weight:700;border-color:transparent}
-  .seg.spectral button[aria-pressed=true]{box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+  .seg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+  @media(max-width:420px){.seg{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  .seg button{font:600 12px/1 'Manrope',sans-serif;padding:10px 4px;border-radius:10px;
+    border:1px solid var(--line);background:var(--surface-2);color:var(--muted);cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:5px}
+  .seg button .dot{width:10px;height:10px;border-radius:50%}
+  .seg button:hover{color:var(--ink);border-color:var(--faint)}
+  .seg button[aria-pressed=true]{color:#09122C;font-weight:800;border-color:transparent}
 
-  .selrow{display:flex;gap:8px}
-  select{flex:1;font:500 12px/1 'Inter',sans-serif;padding:10px 11px;border-radius:10px;
-    border:1px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer}
-  .switch{display:flex;align-items:center;justify-content:space-between;gap:10px;
-    padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:var(--panel2)}
-  .switch label{font-size:12px;color:var(--ink)}
-  .toggle{position:relative;width:42px;height:23px;flex:none}
-  .toggle input{opacity:0;width:0;height:0}
-  .track{position:absolute;inset:0;background:var(--line);border-radius:99px;transition:.18s;cursor:pointer}
-  .track::before{content:"";position:absolute;left:3px;top:3px;width:17px;height:17px;
-    border-radius:50%;background:var(--ink);transition:.18s}
-  .toggle input:checked + .track{background:var(--emerald)}
-  .toggle input:checked + .track::before{transform:translateX(19px)}
-  .toggle input:focus-visible + .track{outline:2px solid var(--o);outline-offset:2px}
-
-  .presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
-  .presets button{font:500 11px/1 'JetBrains Mono',monospace;padding:7px 11px;border-radius:99px;
-    border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;transition:.15s}
-  .presets button:hover{border-color:var(--g);color:var(--g)}
-
-  /* ── system viz (top-down orbital plane) ──
-     Stage is intentionally LOCKED to the dark observatory look across all
-     themes — space doesn't have a light mode. */
-  .stage{position:relative;height:184px;border-radius:14px;overflow:hidden;
-    background:radial-gradient(120% 130% at 12% 50%, rgba(255,255,255,.04), transparent 50%),
-      linear-gradient(180deg,#070a14,#0c1120);
-    border:1px solid #283150;margin-bottom:16px}
-  .stage svg.stage-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
-  .stage-meta{position:absolute;top:8px;right:11px;text-align:right;
-    font:500 9.5px/1.5 'JetBrains Mono',monospace;color:#9aa6c8;z-index:2}
-  .stage-meta b{color:#eef2ff}
-
-  /* ── theme switch ── */
-  .theme-switch{display:inline-flex;gap:3px;padding:4px;border:1px solid var(--line);
-    border-radius:99px;background:var(--panel2);align-self:flex-start;margin-top:4px}
-  .theme-switch button{width:30px;height:30px;border:none;border-radius:50%;
-    background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center;
-    transition:.15s}
-  .theme-switch button:hover{color:var(--ink)}
-  .theme-switch button[aria-pressed="true"]{background:var(--g);color:#0a0e1a}
-  .theme-switch svg{width:14px;height:14px}
-
-  /* ── custom-star inputs ── */
-  .custom-star{margin-top:9px;display:flex;gap:8px}
+  select{width:100%;font:500 13px/1.2 'Manrope',sans-serif;padding:10px 12px;border-radius:10px;
+    border:1px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer}
+  .custom-star{margin-top:10px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
   .custom-star[hidden]{display:none}
-  .custom-star label{flex:1;font:500 10px/1.2 'JetBrains Mono',monospace;color:var(--muted);
-    display:flex;flex-direction:column;gap:5px;letter-spacing:.04em;text-transform:uppercase}
-  .custom-star input{font:500 12px/1 'JetBrains Mono',monospace;padding:9px 11px;border-radius:9px;
-    border:1px solid var(--line);background:var(--panel2);color:var(--ink);width:100%;
-    text-transform:none;letter-spacing:0}
-  .custom-star input:focus{outline:none;border-color:var(--g)}
+  .custom-star label{font-size:11px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;gap:5px}
+  .custom-star input{font:600 13px/1 'Manrope',sans-serif;font-variant-numeric:tabular-nums;padding:9px 10px;
+    border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);width:100%}
+  .check{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);cursor:pointer;margin-top:8px}
+  .check input{accent-color:var(--primary);width:15px;height:15px}
 
-  /* ── result ── */
-  .score-card{text-align:center;padding:8px 0 4px}
-  .gauge{position:relative;width:178px;height:178px;margin:0 auto 6px}
+  /* stage: always a navy sky */
+  .stage{position:relative;height:190px;border-radius:14px;overflow:hidden;margin-bottom:16px;
+    background:radial-gradient(120% 130% at 10% 50%,rgba(225,117,100,.10),transparent 55%),
+      linear-gradient(180deg,#060C20,#0B1533);border:1px solid #26345F}
+  .stage svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .stage-meta{position:absolute;top:9px;right:12px;text-align:right;font-size:10.5px;line-height:1.5;
+    color:#B9B3C6;font-variant-numeric:tabular-nums}
+  .stage-meta b{color:#F6ECE8}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--faint);margin:-6px 0 14px}
+  .legend i{display:inline-block;width:14px;height:0;border-top:2px dashed;vertical-align:middle;margin-right:5px}
+
+  /* result */
+  .score-card{text-align:center;padding:4px 0}
+  .gauge{position:relative;width:184px;height:184px;margin:0 auto 8px}
   .gauge svg{transform:rotate(-90deg)}
-  .gauge .mid{position:absolute;inset:0;display:flex;flex-direction:column;
-    align-items:center;justify-content:center}
-  .gauge .num{font:700 46px/1 'Space Grotesk',sans-serif;letter-spacing:-.02em}
-  .gauge .den{font:500 11px/1 'JetBrains Mono',monospace;color:var(--faint);margin-top:5px;letter-spacing:.1em}
-  .gauge .rng{font:500 10px/1 'JetBrains Mono',monospace;color:var(--muted);margin-top:7px}
-  .tier{display:inline-flex;align-items:center;gap:7px;margin-top:4px;padding:7px 15px;
-    border-radius:99px;font:600 12.5px/1 'Inter';border:1px solid}
-  .tier svg{width:14px;height:14px}
+  .gauge .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .gauge .num{font-size:48px;font-weight:800;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+  .gauge .den{font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--faint);margin-top:6px}
+  .tier{display:inline-flex;align-items:center;gap:7px;padding:7px 15px;border-radius:99px;
+    font-size:13px;font-weight:700;border:1px solid}
+  .tier svg{width:15px;height:15px}
   .densb{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;
-    font:700 11px/1 'JetBrains Mono',monospace;letter-spacing:.04em;border:1px solid}
+    font-size:11.5px;font-weight:700;border:1px solid}
   .densb svg{width:13px;height:13px}
 
-  .subs{margin-top:18px;display:flex;flex-direction:column;gap:11px}
-  .sub{}
-  .sub-top{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-  .sub-top .nm{font-size:11.5px;font-weight:500}
-  .sub-top .lb{margin-left:auto;font:500 10px/1 'JetBrains Mono',monospace;color:var(--muted);
-    max-width:150px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .sub-top .w{font:500 9px/1 'JetBrains Mono',monospace;color:var(--faint);
-    border:1px solid var(--line);border-radius:5px;padding:2px 4px}
-  .bar{height:7px;border-radius:99px;background:var(--panel2);overflow:hidden;position:relative}
+  .subs{margin-top:18px;display:flex;flex-direction:column;gap:6px}
+  .sub-top{width:100%;display:flex;align-items:center;gap:8px;padding:6px 0 5px;background:none;border:none;
+    color:var(--ink);cursor:pointer;font:inherit;text-align:left}
+  .sub-top .nm{font-size:12.5px;font-weight:600}
+  .sub-top .new{font-size:9.5px;font-weight:800;letter-spacing:.1em;color:var(--on-primary);background:var(--primary);
+    padding:2px 5px;border-radius:5px}
+  .sub-top .lb{margin-left:auto;font-size:11.5px;font-weight:600;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sub-top .w{font-size:10.5px;font-weight:700;color:var(--faint);border:1px solid var(--line);border-radius:6px;
+    padding:2px 5px;font-variant-numeric:tabular-nums}
+  .bar{height:7px;border-radius:99px;background:var(--surface-2);overflow:hidden;position:relative}
   .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1)}
-  .sub-x{font-size:10.5px;color:var(--faint);margin-top:5px;line-height:1.45;display:none}
+  .sub-x{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.5;display:none}
   .sub.open .sub-x{display:block}
-  .sub-top{cursor:pointer}
 
-  .caveats{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
-  .caveats summary{font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.14em;
-    text-transform:uppercase;color:var(--faint);cursor:pointer;list-style:none;display:flex;align-items:center;gap:7px}
-  .caveats summary svg{width:13px;height:13px}
-  .caveats ul{margin:11px 0 0;padding-left:17px;display:flex;flex-direction:column;gap:8px}
-  .caveats li{font-size:11px;color:var(--muted);line-height:1.5}
+  .caveats{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+  .caveats summary{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+    cursor:pointer;list-style:none;display:flex;align-items:center;gap:7px}
+  .caveats summary svg{width:14px;height:14px}
+  .caveats ul{margin:12px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:8px}
+  .caveats li{font-size:12px;color:var(--muted)}
 
-  .foot{margin-top:26px;font-size:11px;color:var(--faint);line-height:1.6;text-align:center}
-  .foot code{font-family:'JetBrains Mono',monospace;color:var(--muted)}
+  .foot{margin-top:28px;font-size:12px;color:var(--faint);text-align:center;max-width:760px;margin-left:auto;margin-right:auto}
+  .foot a{color:var(--link)}
+  .foot + .foot{margin-top:10px}
+
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
@@ -235,39 +185,87 @@
       <div class="brand">
         <div class="mark"><i data-lucide="orbit"></i></div>
         <div>
-          <div class="eyebrow">VetStar · STEHM model</div>
-          <h1>Exoworld <span class="glow">Habitability Tuner</span></h1>
+          <div class="eyebrow">VetStar · HCI v2 · STEHM</div>
+          <h1>ExoWorld <span>Habitability Tuner</span></h1>
         </div>
       </div>
-      <p class="sub">Dial in a hypothetical planet and host star. The
-        <strong>Habitability Chance Index</strong> recomputes live, using VetStar's six-component
-        scoring from <a href="https://github.com/eagnespuerto/vetstar" target="_blank" rel="noopener">eagnespuerto/vetstar</a>.</p>
+      <p class="lede">Build a planet, pick its star, and watch the Habitability Chance Index change.
+        The scoring is VetStar's HCI v2, from
+        <a href="https://github.com/eagnespuerto/vetstar/blob/release/v2/vetstar_core/habitability.py" target="_blank" rel="noopener">vetstar_core/habitability.py</a>,
+        worked out in your browser.</p>
+      <div class="v2note"><i data-lucide="git-compare"></i><span><b>New in v2:</b> cosmic shoreline, tidal locking and system age
+        replace the TOI disposition and TESS sector scores.</span></div>
     </div>
-    <div class="theme-switch" id="themeSwitch" role="group" aria-label="Color theme">
-      <button data-theme="night" title="Night (default)"><i data-lucide="moon"></i></button>
-      <button data-theme="black" title="Black (OLED)"><i data-lucide="circle"></i></button>
-      <button data-theme="warm"  title="Warm sepia"><i data-lucide="flame"></i></button>
-      <button data-theme="light" title="Light"><i data-lucide="sun"></i></button>
-    </div>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Switch colour theme"></button>
   </header>
 
   <div class="grid">
-    <!-- ───── controls ───── -->
-    <div class="panel">
-      <div class="panel-h"><i data-lucide="sliders-horizontal"></i><h2>Observables</h2>
-        <span class="tag">tune me</span></div>
+    <!-- controls -->
+    <section class="panel" aria-labelledby="h-obs">
+      <div class="panel-h"><i data-lucide="sliders-horizontal"></i><h2 id="h-obs">Your world</h2>
+        <span class="tag">inputs</span></div>
       <div class="panel-b">
 
-        <div class="ctl">
-          <div class="ctl-top"><label><i data-lucide="sun"></i>Host star — spectral class</label></div>
-          <div class="seg spectral" id="segStar"></div>
-          <div class="custom-star" id="customStar" hidden>
-            <label>Teff (K)<input type="number" id="csTeff" min="2000" max="50000" step="50" value="5772"></label>
-            <label>R★ (R⊙)<input type="number" id="csR" min="0.05" max="50" step="0.001" value="1.00"></label>
+        <div class="group">
+          <div class="group-t">Start from a known planet</div>
+          <select id="preset" aria-label="Known exoplanet preset">
+            <option value="">Choose a planet to load…</option>
+            <optgroup label="Solar System (calibration)">
+              <option value="earth">Earth</option>
+              <option value="venus">Venus</option>
+              <option value="mars">Mars</option>
+            </optgroup>
+            <optgroup label="Habitable-zone candidates">
+              <option value="proxb">Proxima Centauri b</option>
+              <option value="kepler186f">Kepler-186f</option>
+              <option value="kepler442b">Kepler-442b</option>
+              <option value="kepler452b">Kepler-452b</option>
+              <option value="kepler1649c">Kepler-1649c</option>
+              <option value="toi700d">TOI-700 d</option>
+              <option value="toi700e">TOI-700 e</option>
+            </optgroup>
+            <optgroup label="TRAPPIST-1 (ultracool dwarf, 7 planets)">
+              <option value="trappist1b">TRAPPIST-1b</option>
+              <option value="trappist1c">TRAPPIST-1c</option>
+              <option value="trappist1d">TRAPPIST-1d</option>
+              <option value="trappist1e">TRAPPIST-1e</option>
+              <option value="trappist1f">TRAPPIST-1f</option>
+              <option value="trappist1g">TRAPPIST-1g</option>
+              <option value="trappist1h">TRAPPIST-1h</option>
+            </optgroup>
+            <optgroup label="Sub-Neptunes and super-Earths">
+              <option value="k218b">K2-18 b</option>
+              <option value="kepler22b">Kepler-22b</option>
+              <option value="gj1214b">GJ 1214 b</option>
+              <option value="cnce">55 Cancri e</option>
+              <option value="superearth">Generic super-Earth</option>
+            </optgroup>
+            <optgroup label="Hot Jupiters">
+              <option value="peg51b">51 Pegasi b</option>
+              <option value="hd209458b">HD 209458 b</option>
+              <option value="hotjup">Generic hot Jupiter</option>
+            </optgroup>
+            <optgroup label="Test cases">
+              <option value="eb">Eclipsing binary (false positive)</option>
+            </optgroup>
+          </select>
+          <div class="hint">Loads the planet and its real host star. Move any slider and the menu clears.</div>
+        </div>
+
+        <div class="group">
+          <div class="group-t">Host star</div>
+          <div class="ctl">
+            <div class="ctl-top"><span class="lbl"><i data-lucide="sun"></i>Spectral class</span></div>
+            <div class="seg" id="segStar" role="group" aria-label="Spectral class"></div>
+            <div class="custom-star" id="customStar" hidden>
+              <label>Teff (K)<input type="number" id="csTeff" min="2000" max="50000" step="50" value="5772"></label>
+              <label>R★ (R⊙)<input type="number" id="csR" min="0.05" max="50" step="0.001" value="1.00"></label>
+              <label>M★ (M⊙)<input type="number" id="csM" min="0.05" max="20" step="0.001" value="1.00"></label>
+            </div>
           </div>
-          <div class="selrow" style="margin-top:10px">
-            <select id="knownStar">
-              <option value="">— or pick a known star (real Teff / R★) —</option>
+          <div class="ctl">
+            <select id="knownStar" aria-label="Known host star">
+              <option value="">Or pick a real star…</option>
               <optgroup label="Sun-like (G / F)">
                 <option value="sun">Sun</option>
                 <option value="alphacenA">Alpha Centauri A</option>
@@ -300,143 +298,96 @@
                 <option value="trappist1">TRAPPIST-1</option>
               </optgroup>
             </select>
+            <div class="hint num-t" id="starHint"></div>
           </div>
-          <div class="hint" id="starHint"></div>
-        </div>
-
-        <div class="ctl">
-          <div class="ctl-top"><label><i data-lucide="ruler"></i>Orbital distance</label>
-            <span class="val" id="vAu">1.00 AU</span></div>
-          <input type="range" id="au" min="0.005" max="5" step="0.001" value="1">
-          <div class="hint" id="auHint"></div>
-        </div>
-
-        <div class="ctl">
-          <div class="ctl-top"><label><i data-lucide="circle"></i>Planet radius</label>
-            <span class="val" id="vR">1.00 R⊕</span></div>
-          <input type="range" id="rad" min="0.3" max="3.5" step="0.01" value="1">
-          <div class="hint">STEHM atmosphere-retention threshold ≈ 0.8 R⊕; above ~2.2 R⊕ likely sub-Neptune.</div>
-        </div>
-
-        <div class="ctl">
-          <div class="ctl-top"><label><i data-lucide="weight"></i>Planet mass</label>
-            <span class="val" id="vM">1.00 M⊕</span></div>
-          <input type="range" id="mass" min="0.1" max="12" step="0.05" value="1">
-          <div class="hint" id="rhoHint"></div>
-        </div>
-
-        <div class="ctl">
-          <div class="ctl-top"><label><i data-lucide="badge-check"></i>ExoFOP disposition</label></div>
-          <div class="selrow">
-            <select id="disp">
-              <option value="__none">No TOI designation</option>
-              <option value="__unc">TOI — unclassified</option>
-              <option value="CP">CP — Confirmed planet</option>
-              <option value="KP">KP — Known planet</option>
-              <option value="PC" selected>PC — Planet candidate</option>
-              <option value="APC">APC — Ambiguous candidate</option>
-              <option value="FP">FP — False positive</option>
-              <option value="FA">FA — False alarm</option>
-            </select>
+          <div class="ctl">
+            <div class="ctl-top"><label for="age"><i data-lucide="hourglass"></i>System age</label>
+              <span class="val" id="vAge">4.57 Gyr</span></div>
+            <input type="range" id="age" min="0.05" max="13" step="0.01" value="4.57">
+            <label class="check"><input type="checkbox" id="ageUnknown">Age unknown (age term goes neutral; tidal locking assumes a mid-life age)</label>
+            <div class="hint num-t" id="ageHint"></div>
           </div>
         </div>
 
-        <div class="ctl">
-          <div class="ctl-top"><label><i data-lucide="scan-search"></i>Pipeline vetting verdict</label></div>
-          <div class="selrow">
+        <div class="group">
+          <div class="group-t">Planet</div>
+          <div class="ctl">
+            <div class="ctl-top"><label for="au"><i data-lucide="ruler"></i>Orbital distance</label>
+              <span class="val" id="vAu">1.00 AU</span></div>
+            <input type="range" id="au" min="0.005" max="5" step="0.0001" value="1">
+            <div class="hint num-t" id="auHint"></div>
+          </div>
+          <div class="ctl">
+            <div class="ctl-top"><label for="rad"><i data-lucide="circle"></i>Radius</label>
+              <span class="val" id="vR">1.00 R⊕</span></div>
+            <input type="range" id="rad" min="0.3" max="3.5" step="0.01" value="1">
+            <div class="hint">STEHM says 0.8 R⊕ and up can keep an atmosphere. Above about 2.2 R⊕ it is likely a sub-Neptune.</div>
+          </div>
+          <div class="ctl">
+            <div class="ctl-top"><label for="mass"><i data-lucide="weight"></i>Mass</label>
+              <span class="val" id="vM">1.00 M⊕</span></div>
+            <input type="range" id="mass" min="0.05" max="12" step="0.001" value="1">
+            <div class="hint num-t" id="rhoHint"></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="group-t">Detection</div>
+          <div class="ctl">
+            <div class="ctl-top"><label for="verd"><i data-lucide="scan-search"></i>Vetting verdict</label></div>
             <select id="verd">
-              <option value="planet_candidate_clean" selected>Planet candidate — on-target</option>
-              <option value="planet_candidate_dirty">Planet candidate — centroid unclear</option>
+              <option value="planet_candidate_clean" selected>Planet candidate, on-target centroid</option>
+              <option value="planet_candidate_dirty">Planet candidate, centroid unclear</option>
+              <option value="eb_indicators">EB indicators (odd-even, secondary, centroid offset)</option>
               <option value="ambiguous">Ambiguous</option>
               <option value="no_signal">No significant signal</option>
               <option value="eclipsing_binary_candidate">Eclipsing-binary candidate</option>
               <option value="false_positive_blend">Background blend</option>
+              <option value="not_vetted">Not vetted</option>
             </select>
           </div>
-        </div>
-
-        <div class="ctl">
-          <div class="ctl-top"><label><i data-lucide="layers"></i>TESS sectors with a detected dip</label>
-            <span class="val" id="vSec">3 / 4</span></div>
-          <input type="range" id="secObs" min="1" max="12" step="1" value="4">
-          <input type="range" id="secDet" min="0" max="12" step="1" value="3" style="margin-top:9px">
-          <div class="hint">Top: sectors observed · Bottom: sectors showing the transit.</div>
-        </div>
-
-        <div class="ctl">
-          <div class="ctl-top"><label><i data-lucide="library"></i>Known exoplanet preset</label></div>
-          <div class="selrow">
-            <select id="preset">
-              <option value="">— select a template —</option>
-              <optgroup label="Solar System (calibration)">
-                <option value="earth">Earth</option>
-                <option value="venus">Venus</option>
-                <option value="mars">Mars</option>
-              </optgroup>
-              <optgroup label="Habitable-zone candidates">
-                <option value="proxb">Proxima Centauri b</option>
-                <option value="kepler186f">Kepler-186f</option>
-                <option value="kepler442b">Kepler-442b</option>
-                <option value="kepler452b">Kepler-452b ("Earth's cousin")</option>
-                <option value="kepler1649c">Kepler-1649c</option>
-                <option value="toi700d">TOI-700d</option>
-                <option value="toi700e">TOI-700e</option>
-              </optgroup>
-              <optgroup label="TRAPPIST-1 system (M dwarf, 7 planets)">
-                <option value="trappist1b">TRAPPIST-1b</option>
-                <option value="trappist1c">TRAPPIST-1c</option>
-                <option value="trappist1d">TRAPPIST-1d</option>
-                <option value="trappist1e">TRAPPIST-1e</option>
-                <option value="trappist1f">TRAPPIST-1f</option>
-                <option value="trappist1g">TRAPPIST-1g</option>
-                <option value="trappist1h">TRAPPIST-1h</option>
-              </optgroup>
-              <optgroup label="Sub-Neptunes & super-Earths">
-                <option value="k218b">K2-18 b</option>
-                <option value="kepler22b">Kepler-22b</option>
-                <option value="gj1214b">GJ 1214 b</option>
-                <option value="cnce">55 Cancri e</option>
-                <option value="superearth">Generic Super-Earth</option>
-              </optgroup>
-              <optgroup label="Hot Jupiters">
-                <option value="peg51b">51 Pegasi b (first around Sun-like)</option>
-                <option value="hd209458b">HD 209458 b ("Osiris")</option>
-                <option value="hotjup">Generic Hot Jupiter</option>
-              </optgroup>
-              <optgroup label="Test cases">
-                <option value="eb">Eclipsing binary (false positive)</option>
-              </optgroup>
+          <div class="ctl">
+            <div class="ctl-top"><label for="disp"><i data-lucide="badge-check"></i>ExoFOP disposition</label></div>
+            <select id="disp">
+              <option value="">None / not a TOI</option>
+              <option value="CP">CP: confirmed planet</option>
+              <option value="KP">KP: known planet</option>
+              <option value="PC">PC: planet candidate</option>
+              <option value="APC">APC: ambiguous candidate</option>
+              <option value="FP">FP: false positive</option>
+              <option value="FA">FA: false alarm</option>
             </select>
+            <div class="hint">HCI v2 does not score this. An FP or FA adds a warning to the caveats.</div>
           </div>
-          <div class="hint">Choose template from known exoplanets to compare.</div>
         </div>
 
       </div>
-    </div>
+    </section>
 
-    <!-- ───── result ───── -->
-    <div class="panel">
-      <div class="panel-h"><i data-lucide="gauge"></i><h2>Habitability Chance Index</h2>
-        <span class="tag" id="paperTag">STEHM</span></div>
+    <!-- result -->
+    <section class="panel" aria-labelledby="h-hci">
+      <div class="panel-h"><i data-lucide="gauge"></i><h2 id="h-hci">Habitability Chance Index</h2>
+        <span class="tag">HCI v2.0</span></div>
       <div class="panel-b">
 
-        <div class="stage" id="stage">
-          <svg class="stage-svg" id="stageSvg" preserveAspectRatio="none"></svg>
+        <div class="stage" id="stage" role="img" aria-label="Top-down view of the star, habitable zone and orbit">
+          <svg id="stageSvg" preserveAspectRatio="none"></svg>
           <div class="stage-meta" id="stageMeta"></div>
         </div>
+        <div class="legend"><span><i style="border-color:#5CC8B0"></i>Conservative HZ</span>
+          <span><i style="border-color:#E17564"></i>Tidal-locking radius</span></div>
 
-        <div class="score-card">
+        <div class="score-card" aria-live="polite">
           <div class="gauge">
-            <svg width="178" height="178" viewBox="0 0 178 178">
-              <circle cx="89" cy="89" r="78" fill="none" stroke="var(--panel2)" stroke-width="13"/>
-              <circle id="arc" cx="89" cy="89" r="78" fill="none" stroke="var(--g)"
-                stroke-width="13" stroke-linecap="round" stroke-dasharray="490"
-                stroke-dashoffset="490" style="transition:stroke-dashoffset .5s,stroke .3s"/>
+            <svg width="184" height="184" viewBox="0 0 184 184" aria-hidden="true">
+              <circle cx="92" cy="92" r="80" fill="none" stroke="var(--surface-2)" stroke-width="14"/>
+              <circle id="arc" cx="92" cy="92" r="80" fill="none" stroke="var(--primary)"
+                stroke-width="14" stroke-linecap="round" stroke-dasharray="503"
+                stroke-dashoffset="503" style="transition:stroke-dashoffset .4s,stroke .3s"/>
             </svg>
             <div class="mid">
-              <div class="num" id="hciNum">—</div>
+              <div class="num" id="hciNum">–</div>
               <div class="den">/ 100 HCI</div>
-              <div class="rng" id="hciRng"></div>
             </div>
           </div>
           <div class="tier" id="tier"></div>
@@ -446,41 +397,45 @@
         <div class="subs" id="subs"></div>
 
         <details class="caveats">
-          <summary><i data-lucide="triangle-alert"></i>Model caveats</summary>
+          <summary><i data-lucide="triangle-alert"></i>Caveats</summary>
           <ul id="caveats"></ul>
         </details>
 
       </div>
-    </div>
+    </section>
   </div>
 
   <p class="foot">
-    Scoring ported verbatim from <code>backend/app/habitability.py</code> — weighted components:
-    size 30 · zone 25 · star 15 · disposition 15 · flags 10 · sectors 5.
-    Habitable-zone edges use Kopparapu et al. (2013/2014); size thresholds from
-    Hill et al. (2026), STEHM, <code>arXiv:2605.00170</code>. First-order estimate, not a vetting verdict.
+    Weights: size 30 · zone 25 · star 15 · vetting 10 · shoreline 10 · tidal locking 5 · age 5.
+    HZ edges from Kopparapu et al. (2013, 2014). Size thresholds from Hill et al. (2026), STEHM,
+    arXiv:2605.00170. Shoreline from Zahnle &amp; Catling (2017). Tidal locking from Kasting et al. (1993).
+    This is a first-order estimate, not a vetting verdict.
   </p>
-  <p class="foot" style="margin-top:10px">
-    <a href="https://github.com/eagnespuerto/exoworld-tuner" target="_blank" rel="noopener" style="color:var(--g);text-decoration:none;border-bottom:1px dotted var(--g)">Source on GitHub</a>
+  <p class="foot">
+    <a href="https://github.com/eagnespuerto/exoworld-tuner" target="_blank" rel="noopener">Source on GitHub</a>
     &nbsp;·&nbsp;
-    <a href="https://ko-fi.com/eagnespuerto" target="_blank" rel="noopener" style="color:var(--k);text-decoration:none;border-bottom:1px dotted var(--k)">Support on Ko-fi</a>
+    <a href="https://ko-fi.com/eagnespuerto" target="_blank" rel="noopener">Support on Ko-fi</a>
   </p>
 </div>
 
 <script>
-/* ════════ HCI ENGINE — ported from habitability.py ════════ */
-const SOLAR_TEFF=5772, RHO_EARTH=5.51, RHO_ROCKY=0.6, RHO_VOL=0.4;
+/* ════════ HCI v2 ENGINE, ported from vetstar_core/habitability.py (release/v2) ════════ */
+const RHO_EARTH=5.51, RHO_ROCKY=0.6, RHO_VOL=0.4;
 const STEHM_SAFE=0.8, STEHM_MARGIN=0.7, STEHM_UPPER=2.2;
 const HZ_I_CHZ=0.95, HZ_O_CHZ=1.676, HZ_I_OHZ=0.75, HZ_O_OHZ=1.765;
+const SOLAR_TEFF=5772;
+const V_ESC_EARTH=11.186, MARS_V_ESC=5.03, MARS_INSOL=0.431;
+const SHORELINE_NORM=MARS_INSOL/(MARS_V_ESC/V_ESC_EARTH)**4;   // anchored at Mars
+const TIDAL_LOCK_AU_SOLAR=0.46, TIDAL_LOCK_REF_AGE=4.5, DEFAULT_AGE=4.5;
 
-// spectral classes (Teff, R⊙) — drives both score and the vibrant ramp
+// spectral-class averages (Teff K, R⊙, M⊙ from the Pecaut & Mamajek dwarf sequence)
 const STARS=[
-  {sp:'M', teff:3400, r:0.39, col:'var(--m)',  name:'M dwarf'},
-  {sp:'K', teff:4600, r:0.72, col:'var(--k)',  name:'K dwarf'},
-  {sp:'G', teff:5772, r:1.00, col:'var(--g)',  name:'G dwarf (Sun-like)'},
-  {sp:'F', teff:6600, r:1.30, col:'var(--f)',  name:'F dwarf'},
-  {sp:'A', teff:8500, r:1.80, col:'var(--a)',  name:'A star'},
-  {sp:'★', teff:5772, r:1.00, col:'var(--g)',  name:'Custom', custom:true},
+  {sp:'M', teff:3400, r:0.39, m:0.37, col:'var(--m)', name:'M dwarf'},
+  {sp:'K', teff:4600, r:0.72, m:0.73, col:'var(--k)', name:'K dwarf'},
+  {sp:'G', teff:5772, r:1.00, m:1.00, col:'var(--g)', name:'G dwarf (Sun-like)'},
+  {sp:'F', teff:6600, r:1.30, m:1.33, col:'var(--f)', name:'F dwarf'},
+  {sp:'A', teff:8500, r:1.80, m:1.86, col:'var(--a)', name:'A star'},
+  {sp:'★', teff:5772, r:1.00, m:1.00, col:'var(--g)', name:'Custom', custom:true},
 ];
 let starIdx=2;
 function teffToColor(t){
@@ -492,41 +447,38 @@ function teffToColor(t){
   return 'var(--o)';
 }
 
-/* Measured Teff / R★ for well-studied host stars. Picking one switches
-   the spectral-class selector to "Custom" and populates the inputs with
-   the literature values, so HZ edges and the stellar-type sub-score use
-   the *actual* star instead of a class average. */
-const KNOWN_STARS = {
-  sun:        {name:'Sun',                  teff:5772, r:1.000},
-  alphacenA:  {name:'Alpha Centauri A',     teff:5790, r:1.224},
-  tauceti:    {name:'Tau Ceti',             teff:5344, r:0.793},
-  cnc55:      {name:'55 Cancri A',          teff:5172, r:0.943},
-  peg51:      {name:'51 Pegasi',            teff:5793, r:1.237},
-  hd209458:   {name:'HD 209458',            teff:6065, r:1.203},
-  kepler22:   {name:'Kepler-22',            teff:5518, r:0.979},
-  kepler452:  {name:'Kepler-452',           teff:5757, r:1.110},
-  alphacenB:  {name:'Alpha Centauri B',     teff:5260, r:0.863},
-  eperidani:  {name:'Epsilon Eridani',      teff:5084, r:0.735},
-  kepler442:  {name:'Kepler-442',           teff:4402, r:0.598},
-  kepler186:  {name:'Kepler-186',           teff:3755, r:0.523},
-  toi700:     {name:'TOI-700',              teff:3480, r:0.420},
-  k218:       {name:'K2-18',                teff:3457, r:0.411},
-  lhs1140:    {name:'LHS 1140',             teff:3216, r:0.213},
-  kepler1649: {name:'Kepler-1649',          teff:3240, r:0.234},
-  gj1214:     {name:'GJ 1214',              teff:3250, r:0.215},
-  barnard:    {name:"Barnard's Star",       teff:3134, r:0.196},
-  ross128:    {name:'Ross 128',             teff:3192, r:0.197},
-  proxima:    {name:'Proxima Centauri',     teff:2833, r:0.162},  // Anugu et al. 2026, arXiv:2610.33373
-  wolf359:    {name:'Wolf 359',             teff:2800, r:0.144},
-  teegarden:  {name:"Teegarden's Star",     teff:2790, r:0.107},
-  trappist1:  {name:'TRAPPIST-1',           teff:2566, r:0.119},
+/* Measured Teff / R★ / M★ for well-studied hosts. Ages (Gyr) only where the
+   literature value is well established; the rest leave age unknown. */
+const KNOWN_STARS={
+  sun:        {name:'Sun',               teff:5772, r:1.000, m:1.000, age:4.57},
+  alphacenA:  {name:'Alpha Centauri A',  teff:5790, r:1.224, m:1.079, age:5.3},
+  tauceti:    {name:'Tau Ceti',          teff:5344, r:0.793, m:0.783},
+  cnc55:      {name:'55 Cancri A',       teff:5172, r:0.943, m:0.905},
+  peg51:      {name:'51 Pegasi',         teff:5793, r:1.237, m:1.110},
+  hd209458:   {name:'HD 209458',         teff:6065, r:1.203, m:1.119},
+  kepler22:   {name:'Kepler-22',         teff:5518, r:0.979, m:0.970},
+  kepler452:  {name:'Kepler-452',        teff:5757, r:1.110, m:1.040, age:6.0},
+  alphacenB:  {name:'Alpha Centauri B',  teff:5260, r:0.863, m:0.909, age:5.3},
+  eperidani:  {name:'Epsilon Eridani',   teff:5084, r:0.735, m:0.820},
+  kepler442:  {name:'Kepler-442',        teff:4402, r:0.598, m:0.610, age:2.9},
+  kepler186:  {name:'Kepler-186',        teff:3755, r:0.523, m:0.540, age:4.0},
+  toi700:     {name:'TOI-700',           teff:3480, r:0.420, m:0.415},
+  k218:       {name:'K2-18',             teff:3457, r:0.411, m:0.495},
+  lhs1140:    {name:'LHS 1140',          teff:3216, r:0.213, m:0.179},
+  kepler1649: {name:'Kepler-1649',       teff:3240, r:0.234, m:0.198},
+  gj1214:     {name:'GJ 1214',           teff:3250, r:0.215, m:0.181},
+  barnard:    {name:"Barnard's Star",    teff:3134, r:0.196, m:0.162},
+  ross128:    {name:'Ross 128',          teff:3192, r:0.197, m:0.168},
+  proxima:    {name:'Proxima Centauri',  teff:2833, r:0.162, m:0.122, age:4.85},  // Teff/R: Anugu et al. 2026, arXiv:2610.33373
+  wolf359:    {name:'Wolf 359',          teff:2800, r:0.144, m:0.110},
+  teegarden:  {name:"Teegarden's Star",  teff:2790, r:0.107, m:0.097},
+  trappist1:  {name:'TRAPPIST-1',        teff:2566, r:0.119, m:0.0898, age:7.6},
 };
 
-const KOPP={recent_venus:[1.776,2.136e-4,2.533e-8,-1.332e-11,-3.097e-15],
-  runaway_greenhouse:[1.107,1.332e-4,1.580e-8,-8.308e-12,-1.931e-15],
-  maximum_greenhouse:[0.356,6.171e-5,1.698e-9,-3.198e-12,-5.575e-16],
-  early_mars:[0.320,5.547e-5,1.526e-9,-2.874e-12,-5.011e-16]};
-function kopp(teff,k){const[s0,a,b,c,d]=KOPP[k],t=teff-5780;return s0+a*t+b*t*t+c*t**3+d*t**4;}
+function hzEdges(teff,rstar){
+  const lr=rstar*rstar*(teff/5778)**4, sq=Math.sqrt(Math.max(lr,0.01));
+  return{iO:HZ_I_OHZ*sq,oO:HZ_O_OHZ*sq,iC:HZ_I_CHZ*sq,oC:HZ_O_CHZ*sq};
+}
 
 function densityVerdict(rhoRel){
   const g=rhoRel*RHO_EARTH;
@@ -537,15 +489,16 @@ function densityVerdict(rhoRel){
 
 function scoreSize(rp,mp){
   const w=0.30; let s,label,x;
-  if(rp>STEHM_UPPER){s=0.05;label='Too large';x=`${rp.toFixed(2)} R⊕ exceeds the ~2.2 R⊕ rocky cap; likely a sub-Neptune.`;}
-  else if(rp<0.5){s=0.02;label='Too small';x=`${rp.toFixed(2)} R⊕ below the STEHM range; atmosphere retention ≈ 0.`;}
-  else if(rp>=STEHM_SAFE){s=0.75+0.25*Math.min((rp-STEHM_SAFE)/(1-STEHM_SAFE),1);label='Favourable';
-    x=`${rp.toFixed(2)} R⊕ ≥ 0.8 R⊕ — can retain a long-term CO₂ atmosphere under Earth-like conditions.`;}
+  if(rp>STEHM_UPPER){s=0.05;label='Too large';x=`${rp.toFixed(2)} R⊕ exceeds the ~2.2 R⊕ rocky cap; likely a sub-Neptune.`;
+    return{name:'Planet size',score:s,weight:w,label,x};}
+  if(rp<0.5){s=0.02;label='Too small';x=`${rp.toFixed(2)} R⊕ is below the STEHM range; atmosphere retention ≈ 0.`;
+    return{name:'Planet size',score:s,weight:w,label,x};}
+  if(rp>=STEHM_SAFE){s=0.75+0.25*Math.min((rp-STEHM_SAFE)/(1-STEHM_SAFE),1);label='Favourable';
+    x=`${rp.toFixed(2)} R⊕ ≥ 0.8 R⊕: can keep a long-term CO₂ atmosphere under Earth-like conditions.`;}
   else if(rp>=STEHM_MARGIN){s=0.35+0.40*(rp-STEHM_MARGIN)/(STEHM_SAFE-STEHM_MARGIN);label='Marginal';
-    x=`${rp.toFixed(2)} R⊕ below the 0.8 R⊕ threshold; retention needs favourable formation conditions.`;}
+    x=`${rp.toFixed(2)} R⊕ is below 0.8 R⊕; keeping an atmosphere needs high carbon, a cool mantle start and a low core fraction.`;}
   else{s=0.05+0.30*(rp-0.5)/(STEHM_MARGIN-0.5);label='Unlikely';
-    x=`${rp.toFixed(2)} R⊕ < 0.7 R⊕ — STEHM predicts rapid atmosphere loss.`;}
-  // density refine
+    x=`${rp.toFixed(2)} R⊕ < 0.7 R⊕: STEHM predicts fast atmosphere loss.`;}
   if(mp&&rp>0){
     const[mult,lo,note]=densityVerdict(mp/rp**3);
     s=Math.min(1,s*mult); if(lo)label=lo;
@@ -555,415 +508,381 @@ function scoreSize(rp,mp){
 }
 
 function scoreHZ(au,teff,rstar){
-  const w=0.25;
-  const lr=rstar*rstar*(teff/5778)**4, sq=Math.sqrt(Math.max(lr,0.01));
-  const iO=HZ_I_OHZ*sq,oO=HZ_O_OHZ*sq,iC=HZ_I_CHZ*sq,oC=HZ_O_CHZ*sq;
+  const w=0.25, e=hzEdges(teff,rstar), {iO,oO,iC,oC}=e;
   let s,label,x;
-  if(au<iO){s=0.05;label='Too hot';x=`${au.toFixed(3)} AU inside the optimistic inner edge (${iO.toFixed(3)} AU). Runaway greenhouse.`;}
-  else if(au>oO){s=0.10;label='Too cold';x=`${au.toFixed(3)} AU beyond the optimistic outer edge (${oO.toFixed(3)} AU). Water likely frozen.`;}
+  if(au<iO){s=0.05;label='Too hot';x=`${au.toFixed(3)} AU is inside the optimistic inner edge (${iO.toFixed(3)} AU). Runaway greenhouse.`;}
+  else if(au>oO){s=0.10;label='Too cold';x=`${au.toFixed(3)} AU is beyond the optimistic outer edge (${oO.toFixed(3)} AU). Water likely frozen.`;}
   else if(au<iC){const f=(au-iO)/Math.max(iC-iO,1e-6);s=0.30+0.25*f;label='Warm edge (OHZ)';
-    x=`${au.toFixed(3)} AU — between recent-Venus and runaway-greenhouse limits.`;}
+    x=`${au.toFixed(3)} AU, between the recent-Venus and runaway-greenhouse limits.`;}
   else if(au>oC){const f=(oO-au)/Math.max(oO-oC,1e-6);s=0.65+0.30*f;label='Cool edge (OHZ)';
-    x=`${au.toFixed(3)} AU — between max-greenhouse and early-Mars limits; outer-HZ retention favoured.`;}
+    x=`${au.toFixed(3)} AU, between the max-greenhouse and early-Mars limits. Outer-HZ planets keep atmospheres more easily.`;}
   else{const f=(au-iC)/Math.max(oC-iC,1e-6);s=Math.min(0.75+0.20*(1-Math.abs(f-0.5)*2),1);label='Conservative HZ';
-    x=`${au.toFixed(3)} AU — inside the CHZ (${iC.toFixed(3)}–${oC.toFixed(3)} AU). Best case for liquid water.`;}
-  return{name:'Habitable zone',score:s,weight:w,label,x,edges:{iO,oO,iC,oC}};
+    x=`${au.toFixed(3)} AU, inside the conservative HZ (${iC.toFixed(3)}–${oC.toFixed(3)} AU). Best case for liquid water.`;}
+  return{name:'Habitable zone',score:s,weight:w,label,x,edges:e};
 }
 
 function scoreStar(teff){
-  const w=0.15; let s,label,x;
-  if(teff>=5000&&teff<6000){s=0.90;label='G dwarf (solar analog)';x=`Teff=${teff} K — the regime STEHM was calibrated for.`;}
-  else if(teff>=6000&&teff<=7500){s=0.80;label='F dwarf';x=`Teff=${teff} K — STEHM results broadly transferable.`;}
-  else if(teff>=3700&&teff<5000){s=0.65;label='K dwarf';x=`Teff=${teff} K — modestly higher XUV than the Sun.`;}
-  else if(teff<3700){s=0.30;label='M dwarf';x=`Teff=${teff} K — STEHM not calibrated for M-dwarf XUV; flares worsen retention.`;}
-  else{s=0.40;label='Hot star';x=`Teff=${teff} K — intense radiation, short main-sequence lifetime.`;}
+  const w=0.15; let s,label,x; const t=Math.round(teff);
+  if(teff>=5000&&teff<6000){s=0.90;label='G dwarf (solar analogue)';x=`Teff ${t} K, the regime STEHM was calibrated for.`;}
+  else if(teff>=6000&&teff<=7500){s=0.80;label='F dwarf';x=`Teff ${t} K. STEHM results broadly carry over.`;}
+  else if(teff>=3700&&teff<5000){s=0.65;label='K dwarf';x=`Teff ${t} K. A little more XUV than the Sun; the safe size may shift up slightly.`;}
+  else if(teff<3700){s=0.30;label='M dwarf';x=`Teff ${t} K. STEHM is not calibrated for M-dwarf XUV histories, and flares make retention worse.`;}
+  else{s=0.40;label='Hot star';x=`Teff ${t} K. Intense radiation and a short main-sequence life.`;}
   return{name:'Stellar type',score:s,weight:w,label,x};
 }
 
-function scoreDisp(d){
-  const w=0.15;
-  if(d==='__none')return{name:'TOI disposition',score:0.50,weight:w,label:'No TOI',x:'No TOI designation — signal may be new or not yet ingested.'};
-  if(d==='__unc')return{name:'TOI disposition',score:0.55,weight:w,label:'Unclassified TOI',x:'TOI exists but has no disposition yet.'};
-  if(d==='CP'||d==='KP')return{name:'TOI disposition',score:1.00,weight:w,label:'Confirmed/Known',x:`${d} — independently confirmed. Highest confidence.`};
-  if(d==='PC'||d==='APC')return{name:'TOI disposition',score:0.75,weight:w,label:'Planet candidate',x:`${d} — passed TESS pipeline vetting.`};
-  if(d==='FP'||d==='FA')return{name:'TOI disposition',score:0.05,weight:w,label:'False positive/alarm',x:`${d} — ExoFOP flags this as a false positive.`};
-  return{name:'TOI disposition',score:0.50,weight:w,label:d,x:'Unrecognised disposition.'};
-}
-
 function scoreVerd(v){
-  const w=0.10;
+  const n='Vetting flags', w=0.10;
+  if(v==='not_vetted')return{name:n,score:0.50,weight:w,label:'Not vetted',x:'No vetting result.'};
   if(v==='eclipsing_binary_candidate'||v==='false_positive_blend')
-    return{name:'Vetting flags',score:0.05,weight:w,label:'EB / blend',x:'Pipeline flags an eclipsing binary or background blend — not a planet.'};
-  if(v==='no_signal')return{name:'Vetting flags',score:0.40,weight:w,label:'No signal',x:'No significant transit/eclipse signal detected.'};
-  if(v==='planet_candidate_clean')return{name:'Vetting flags',score:0.85,weight:w,label:'Planet candidate',x:'Classified as planet candidate with on-target centroid.'};
-  if(v==='planet_candidate_dirty')return{name:'Vetting flags',score:0.55,weight:w,label:'Planet candidate',x:'Planet candidate, but centroid is unclear.'};
-  return{name:'Vetting flags',score:0.45,weight:w,label:'Ambiguous',x:'Vetting result is ambiguous — manual review recommended.'};
+    return{name:n,score:0.05,weight:w,label:'EB / blend',x:'The pipeline flags an eclipsing binary or background blend, not a planet.'};
+  if(v==='no_signal')return{name:n,score:0.40,weight:w,label:'No signal',x:'No significant transit or eclipse signal.'};
+  if(v==='eb_indicators')return{name:n,score:0.10,weight:w,label:'EB indicators',x:'Odd-even mismatch, secondary eclipse or centroid offset raised.'};
+  if(v==='planet_candidate_clean')return{name:n,score:0.85,weight:w,label:'Planet candidate',x:'Planet candidate with an on-target centroid.'};
+  if(v==='planet_candidate_dirty')return{name:n,score:0.55,weight:w,label:'Planet candidate',x:'Planet candidate, but the centroid is unclear.'};
+  return{name:n,score:0.45,weight:w,label:'Ambiguous',x:'Ambiguous result. Check it by hand.'};
 }
 
-function scoreSectors(det,obs){
-  const w=0.05;
-  if(obs===1)return{name:'Multi-sector',score:0.40,weight:w,label:'Single sector',x:'One sector — period unconstrained.'};
-  if(det===0)return{name:'Multi-sector',score:0.30,weight:w,label:'No detections',x:`0/${obs} sectors show a dip — inconsistent with a real transit.`};
-  const f=det/obs,s=Math.min(0.40+0.60*f,1),tier=f>=0.6?'Consistent':'Partial';
-  return{name:'Multi-sector',score:s,weight:w,label:`${tier} (${det}/${obs})`,
-    x:`Dip in ${det} of ${obs} sectors — ${f>=0.6?'consistent with a real periodic signal.':'more sectors needed.'}`};
+function shorelineRatio(mp,rp,insol,lum){
+  const iXuv=lum>0?insol*lum**-0.6:insol;          // Zahnle & Catling eq. 27 XUV scaling
+  return iXuv/(SHORELINE_NORM*(mp/rp)**2);          // v_rel⁴ = (M/R)²
+}
+function scoreShoreline(rp,mp,insol,lum){
+  const w=0.10;
+  const q=shorelineRatio(mp,rp,insol,lum), vEsc=V_ESC_EARTH*Math.sqrt(mp/rp), lq=Math.log10(q);
+  const s=Math.max(0.05,Math.min(1,1-0.95*(lq+1)/2));
+  const label=lq<=-0.5?'Atmosphere side':lq<0.5?'On the shoreline':'Airless side';
+  const x=`v_esc ${vEsc.toFixed(1)} km/s from ${mp.toFixed(1)} M⊕ and ${rp.toFixed(2)} R⊕. XUV instellation is ${q.toPrecision(2)}× the shoreline value (I ∝ v_esc⁴, anchored at Mars), so it sits ${q<1?'below':'above'} the line.`;
+  return{name:'Cosmic shoreline',score:s,weight:w,label,x,isNew:true};
+}
+
+const msLifetime=m=>10*m**-2.5;
+const tidalLockAU=(m,age)=>TIDAL_LOCK_AU_SOLAR*(age/TIDAL_LOCK_REF_AGE)**(1/6)*m**(1/3);
+
+function ageInfo(ageGyr,mstar){
+  const tms=msLifetime(mstar);
+  if(ageGyr) return{age:ageGyr,tms,assumed:null};
+  return{age:null,tms,assumed:Math.min(DEFAULT_AGE,0.5*tms)};
+}
+function scoreTidal(au,mstar,ai){
+  const w=0.05, assumed=ai.age==null, age=assumed?ai.assumed:ai.age;
+  const rT=tidalLockAU(mstar,age), x=au/rT;
+  let s,label,why;
+  if(x>=1.5){s=1;label='Free rotator';why='Well outside it: expect a day-night cycle.';}
+  else if(x>=1){s=0.4+0.6*(x-1)/0.5;label='Near locking radius';why='Close to it: the spin may be slowed or locked.';}
+  else{s=0.4;label='Likely tidally locked';why='Inside it: a permanent day side is likely. Climate models still allow habitable locked planets, so this lowers the score but does not rule it out.';}
+  return{name:'Tidal locking',score:s,weight:w,label,isNew:true,rT,
+    x:`${au.toFixed(3)} AU against a locking radius of ${rT.toFixed(3)} AU at ${age.toFixed(1)} Gyr${assumed?' (assumed)':''}. ${why}`};
+}
+function scoreAge(ai){
+  const w=0.05, n='System age';
+  if(ai.age==null)return{name:n,score:0.5,weight:w,label:'Unknown',isNew:true,x:'No age given, so this term is neutral.'};
+  const age=ai.age, tms=ai.tms; let s,label,why;
+  if(age<0.1){s=0.10;label='Very young';why='under 0.1 Gyr: heavy bombardment and a very active star.';}
+  else if(age<1){s=0.10+0.60*Math.log10(age/0.1);label='Young';why='under 1 Gyr: the star is still XUV-bright and flaring.';}
+  else if(age<3){s=0.70+0.30*(age-1)/2;label='Maturing';why='1–3 Gyr: past the most active phase.';}
+  else{s=1;label='Mature';why='over 3 Gyr: a quiet star and time for a stable climate.';}
+  if(tms&&age>0.8*tms){
+    const late=1-0.7*Math.min((age-0.8*tms)/(0.2*tms),1);
+    if(late<s){s=late;label='Late main sequence';why=`over 80% of the ~${tms.toFixed(1)} Gyr main-sequence life: the star is brightening and the HZ is moving out.`;}
+  }
+  return{name:n,score:s,weight:w,label,isNew:true,x:`Age ≈ ${age.toFixed(2)} Gyr: ${why}`};
 }
 
 function computeHCI(P){
   const star=STARS[starIdx];
+  const lum=star.r**2*(star.teff/SOLAR_TEFF)**4, insol=lum/P.au**2;
+  const ai=ageInfo(P.age,star.m);
+  const tidal=scoreTidal(P.au,star.m,ai);
   const subs=[
     scoreSize(P.rp,P.mp),
     scoreHZ(P.au,star.teff,star.r),
     scoreStar(star.teff),
-    scoreDisp(P.disp),
     scoreVerd(P.verd),
-    scoreSectors(P.det,P.obs),
+    scoreShoreline(P.rp,P.mp,insol,lum),
+    tidal,
+    scoreAge(ai),
   ];
   const tw=subs.reduce((a,s)=>a+s.weight,0);
   let hci=subs.reduce((a,s)=>a+s.score*s.weight,0)/tw*100;
 
-  // ── bulk-density modifier (±10 pts, applied after the weighted average) ──
-  // terrestrial (ρ ≥ 0.6 ρ⊕ ≈ 3.3 g/cm³) → +10; gas-giant (ρ < 0.4 ρ⊕ ≈ 2.2) → −10.
+  // bulk-density modifier (±10 pts, after the weighted average)
   let densMod=0, densLabel=null;
-  if(P.rp>0 && P.mp>0){
-    const rhoRel=P.mp/P.rp**3;
-    if(rhoRel>=RHO_ROCKY){densMod=10;densLabel='terrestrial';}
-    else if(rhoRel<RHO_VOL){densMod=-10;densLabel='gas-giant';}
-  }
+  const rhoRel=P.mp/P.rp**3;
+  if(rhoRel>=RHO_ROCKY){densMod=10;densLabel='terrestrial';}
+  else if(rhoRel<RHO_VOL){densMod=-10;densLabel='gas-giant';}
   if(densMod) hci=Math.max(0,Math.min(100,hci+densMod));
 
-  const caveats=[];
-  if(star.teff<3700)caveats.push('STEHM is calibrated for Sun-like stars. M-dwarf XUV environments are more hostile — the safe-size threshold may exceed 0.8 R⊕.');
-  if(P.rp>=0.7&&P.rp<0.8)caveats.push('Planet is in the STEHM marginal zone (0.7–0.8 R⊕). Retention depends critically on carbon inventory, HPE, and core fraction.');
-  if(P.obs===1)caveats.push('Only one TESS sector observed. Period is unconstrained — periodicity cannot be verified.');
-  caveats.push('STEHM models a pure-CO₂ stagnant-lid planet as a best case. Non-thermal escape, magnetic fields, and plate tectonics are excluded — this is a first-order estimate only.');
-  if(densLabel){
-    const sign=densMod>0?'+':'';
-    caveats.unshift(`Bulk-density modifier applied: ${sign}${densMod} pts (${densLabel} density). Terrestrial densities (ρp ≳ 3.3 g/cm³) add +10; gas-giant densities (ρp ≲ 2.2 g/cm³) subtract 10.`);
-  }
-
-  // EB / blend hard override
-  if(P.verd==='eclipsing_binary_candidate'||P.verd==='false_positive_blend')hci=Math.min(hci,12);
+  const isEB=P.verd==='eclipsing_binary_candidate'||P.verd==='false_positive_blend';
+  if(isEB) hci=Math.min(hci,12);
 
   let tier,col,icon;
-  if(hci>=70){tier='Promising';col='var(--emerald)';icon='sparkles';}
-  else if(hci>=45){tier='Marginal';col='var(--amber)';icon='circle-dashed';}
-  else if(hci>=20){tier='Unlikely';col='var(--rose)';icon='circle-slash';}
-  else{tier='Very unlikely';col='var(--slate)';icon='circle-x';}
-  if(hci<=12&&(P.verd==='eclipsing_binary_candidate'||P.verd==='false_positive_blend')){tier='Very unlikely';col='var(--slate)';icon='circle-x';}
+  if(hci>=70){tier='Promising';col='var(--tide)';icon='sparkles';}
+  else if(hci>=45){tier='Marginal';col='var(--ochre)';icon='circle-dashed';}
+  else if(hci>=20){tier='Unlikely';col='var(--poor)';icon='circle-slash';}
+  else{tier='Very unlikely';col='var(--dust)';icon='circle-x';}
 
-  return{hci:Math.round(hci*10)/10,tier,col,icon,subs,caveats,star,densMod,densLabel};
+  const caveats=[];
+  if(densLabel) caveats.push(`Bulk-density modifier: ${densMod>0?'+':''}${densMod} pts (${densLabel} density). Densities ≳ 3.3 g/cm³ add 10; ≲ 2.2 g/cm³ subtract 10.`);
+  if(lum<0.01) caveats.push(`This star is ${lum.toPrecision(2)} L⊙. The HZ formula floors luminosity at 0.01 L⊙ (as VetStar does), so the HZ is drawn farther out than Kopparapu's flux limits would put it.`);
+  if(star.teff<3700) caveats.push('STEHM is calibrated for Sun-like stars. M-dwarf XUV is harsher, so the safe size may be above 0.8 R⊕.');
+  if(P.rp>=0.7&&P.rp<0.8) caveats.push('The planet is in the STEHM marginal zone (0.7–0.8 R⊕). Retention depends on carbon inventory, heat-producing elements and core fraction (Hill et al. 2026 §5.1–5.4).');
+  if(['FP','FA'].includes(P.disp)) caveats.push(`ExoFOP lists this as ${P.disp} (false ${P.disp==='FP'?'positive':'alarm'}). HCI v2 does not score the disposition, so check it before trusting this number.`);
+  if(ai.age==null) caveats.push(`No system age, so the age term is neutral and tidal locking assumes ${ai.assumed.toFixed(1)} Gyr.`);
+  if(isEB) caveats.push('Eclipsing binary or blend: the HCI is capped at 12.');
+  caveats.push('STEHM models a pure-CO₂ stagnant-lid planet as a best case. Non-thermal escape, magnetic fields and plate tectonics are left out, so treat the HCI as a first-order estimate.');
+
+  return{hci:Math.round(hci*10)/10,tier,col,icon,subs,caveats,star,densMod,densLabel,tidal};
 }
 
-/* ════════ UI WIRING ════════ */
+/* ════════ UI ════════ */
 const $=id=>document.getElementById(id);
-const subColor=s=> s>=0.7?'var(--emerald)': s>=0.45?'var(--amber)': s>=0.2?'var(--k)':'var(--rose)';
+const subColor=s=> s>=0.7?'var(--tide)': s>=0.45?'var(--ochre)': s>=0.2?'var(--poor)':'var(--brand)';
+const openSubs=new Set();
+
+function setFill(el){
+  const f=(el.value-el.min)/(el.max-el.min)*100;
+  el.style.setProperty('--fill',f+'%');
+}
 
 function buildStarSeg(){
-  const seg=$('segStar');seg.innerHTML='';
+  const seg=$('segStar'); seg.innerHTML='';
   STARS.forEach((st,i)=>{
     const b=document.createElement('button');
+    b.type='button';
     b.setAttribute('aria-pressed',i===starIdx);
     b.innerHTML=`<span class="dot" style="background:${st.col}"></span>${st.custom?'Custom':st.sp}`;
     if(i===starIdx)b.style.background=st.col;
     b.onclick=()=>{
       starIdx=i;
-      if(!st.custom){
-        // reverting to a class average — drop the known-star selection & label
-        const cs=$('knownStar'); if(cs) cs.value='';
-        if(customStar) customStar.label=null;
-      }
+      if(!st.custom){ $('knownStar').value=''; customStar.label=null; }
       snapToHZ();
-      $('preset').value='';   // diverged from any planet preset
-      buildStarSeg();render();
+      $('preset').value='';
+      buildStarSeg(); render();
     };
     seg.appendChild(b);
   });
-  $('customStar').hidden = !STARS[starIdx].custom;
+  $('customStar').hidden=!STARS[starIdx].custom;
 }
 
-/* Move the AU slider to the conservative-HZ midpoint for the currently
-   selected star. Triggered whenever the *star* changes on its own (button
-   or known-star dropdown) so the visualization starts on a habitable orbit. */
+/* Put the orbit at the middle of the new star's conservative HZ. */
 function snapToHZ(){
-  const star=STARS[starIdx];
-  const lr=star.r*star.r*(star.teff/5778)**4, sq=Math.sqrt(Math.max(lr,0.01));
-  const iC=HZ_I_CHZ*sq, oC=HZ_O_CHZ*sq;
-  const auMid=(iC+oC)/2;
-  const auEl=$('au');
-  auEl.value=Math.min(+auEl.max, Math.max(+auEl.min, auMid));
+  const st=STARS[starIdx], e=hzEdges(st.teff,st.r), el=$('au');
+  el.value=Math.min(+el.max,Math.max(+el.min,(e.iC+e.oC)/2));
+}
+
+function setAge(age){
+  if(age){ $('ageUnknown').checked=false; $('age').value=age; }
+  else $('ageUnknown').checked=true;
 }
 
 function readState(){
-  const obs=+$('secObs').value;
-  let det=+$('secDet').value; det=Math.min(det,obs);
-  $('secDet').max=obs; $('secDet').value=det;
-  return{
-    au:+$('au').value, rp:+$('rad').value, mp:+$('mass').value,
-    disp:$('disp').value, verd:$('verd').value, obs, det
-  };
+  const unknown=$('ageUnknown').checked;
+  $('age').disabled=unknown;
+  return{au:+$('au').value, rp:+$('rad').value, mp:+$('mass').value,
+    age:unknown?null:+$('age').value, verd:$('verd').value, disp:$('disp').value};
 }
 
 function render(){
   const P=readState(), R=computeHCI(P), star=R.star;
+  document.querySelectorAll('input[type=range]').forEach(setFill);
 
-  // value chips
-  const auFmt = a => a<0.1 ? a.toFixed(3) : a.toFixed(2);
+  const auFmt=a=>a<0.1?a.toFixed(3):a.toFixed(2);
   $('vAu').textContent=auFmt(P.au)+' AU';
   $('vR').textContent=P.rp.toFixed(2)+' R⊕';
   $('vM').textContent=P.mp.toFixed(2)+' M⊕';
-  $('vSec').textContent=`${P.det} / ${P.obs}`;
-  const rho=(P.mp/P.rp**3); // ρ⊕
-  const band = rho>=RHO_ROCKY?' → terrestrial (+10)' : rho<RHO_VOL?' → gas-giant (−10)' : ' → intermediate (0)';
-  $('rhoHint').textContent=`Implied bulk density ≈ ${(rho*RHO_EARTH).toFixed(1)} g/cm³ (${rho.toFixed(2)} ρ⊕)${band}.`;
-  const starLabel = star.label || star.name;
-  $('starHint').textContent=`${starLabel} · Teff ≈ ${Math.round(star.teff)} K · R★ ≈ ${star.r} R⊙`;
+  $('vAge').textContent=P.age==null?'unknown':P.age.toFixed(2)+' Gyr';
+  const rho=P.mp/P.rp**3;
+  const band=rho>=RHO_ROCKY?'terrestrial, +10':rho<RHO_VOL?'gas-giant, −10':'intermediate, 0';
+  $('rhoHint').textContent=`Bulk density ≈ ${(rho*RHO_EARTH).toFixed(1)} g/cm³ (${rho.toFixed(2)} ρ⊕): ${band}.`;
+  $('starHint').textContent=`${star.label||star.name} · Teff ${Math.round(star.teff)} K · R★ ${star.r} R⊙ · M★ ${star.m} M⊙`;
   const hz=R.subs[1].edges;
-  $('auHint').textContent=`Conservative HZ for this star: ${hz.iC.toFixed(2)}–${hz.oC.toFixed(2)} AU.`;
+  $('auHint').textContent=`Conservative HZ: ${hz.iC.toFixed(3)}–${hz.oC.toFixed(3)} AU. Tidal locking inside ${R.tidal.rT.toFixed(3)} AU.`;
+  $('ageHint').textContent=`Main-sequence life for this star ≈ ${Math.min(msLifetime(star.m),99).toFixed(1)} Gyr.`;
 
-  // gauge
-  const C=2*Math.PI*78;
-  $('arc').setAttribute('stroke-dasharray',C);
-  $('arc').setAttribute('stroke-dashoffset',C*(1-R.hci/100));
-  $('arc').style.stroke=R.col;
+  const C=2*Math.PI*80, arc=$('arc');
+  arc.setAttribute('stroke-dasharray',C);
+  arc.setAttribute('stroke-dashoffset',C*(1-R.hci/100));
+  arc.style.stroke=R.col;
   $('hciNum').textContent=R.hci.toFixed(1);
   $('hciNum').style.color=R.col;
-  $('hciRng').textContent='';
 
   const t=$('tier');
   t.innerHTML=`<i data-lucide="${R.icon}"></i>${R.tier}`;
   t.style.color=R.col; t.style.borderColor=R.col;
-  t.style.background='color-mix(in srgb,'+R.col+' 14%, transparent)';
+  t.style.background=`color-mix(in srgb,${R.col} 12%,transparent)`;
 
-  // density modifier badge
   const db=$('densBadge');
   if(R.densMod){
-    const up=R.densMod>0, c=up?'var(--emerald)':'var(--rose)';
-    db.style.display='inline-block';
+    const up=R.densMod>0, c=up?'var(--tide)':'var(--poor)';
+    db.style.display='block';
     db.innerHTML=`<span class="densb" style="color:${c};border-color:${c};background:color-mix(in srgb,${c} 12%,transparent)">`+
       `<i data-lucide="${up?'trending-up':'trending-down'}"></i>${up?'+':''}${R.densMod} density · ${R.densLabel}</span>`;
   }else{db.style.display='none';db.innerHTML='';}
 
-  // sub-scores
-  const sb=$('subs');sb.innerHTML='';
+  const sb=$('subs'); sb.innerHTML='';
   R.subs.forEach(s=>{
-    const pct=Math.round(s.score*100), c=subColor(s.score);
-    const el=document.createElement('div');el.className='sub';
+    const pct=Math.round(s.score*100), c=subColor(s.score), open=openSubs.has(s.name);
+    const el=document.createElement('div'); el.className='sub'+(open?' open':'');
     el.innerHTML=`
-      <div class="sub-top">
-        <span class="nm">${s.name}</span>
+      <button class="sub-top" type="button" aria-expanded="${open}">
+        <span class="nm">${s.name}</span>${s.isNew?'<span class="new">V2</span>':''}
         <span class="lb" style="color:${c}">${s.label}</span>
         <span class="w">${Math.round(s.weight*100)}%</span>
-      </div>
-      <div class="bar"><i style="width:${pct}%;background:${c}"></i></div>
+      </button>
+      <div class="bar" role="meter" aria-label="${s.name} score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%;background:${c}"></i></div>
       <div class="sub-x">${s.x}</div>`;
-    el.querySelector('.sub-top').onclick=()=>el.classList.toggle('open');
+    el.querySelector('.sub-top').onclick=()=>{
+      openSubs.has(s.name)?openSubs.delete(s.name):openSubs.add(s.name); render();
+    };
     sb.appendChild(el);
   });
 
-  // caveats
   $('caveats').innerHTML=R.caveats.map(c=>`<li>${c}</li>`).join('');
-
-  // ── system stage viz ──
   drawStage(P,R,hz);
   if(window.lucide)lucide.createIcons();
 }
 
 function drawStage(P,R,hz){
-  const stage=$('stage'), W=stage.clientWidth, H=stage.clientHeight;
-  const svg=$('stageSvg');
+  const stage=$('stage'), svg=$('stageSvg');
+  // a hidden or collapsed pane reports 0 px; fall back so radii stay positive
+  const W=Math.max(stage.clientWidth,260), H=Math.max(stage.clientHeight,190);
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
-  const cy=H/2, pad=18, x0=42; // star center; offset so HZ arc curves visibly
-  const star=STARS[starIdx];
-  const sd=Math.min(46,14+star.r*16);            // star display diameter
-  const psz=Math.max(6,Math.min(26,P.rp*8));      // planet display diameter
+  const cy=H/2, pad=18, x0=42, star=STARS[starIdx];
+  const sd=Math.min(46,14+star.r*16), psz=Math.max(6,Math.min(26,P.rp*8));
+  // fit the larger of the orbit and the optimistic outer edge; no fixed floor,
+  // so compact M-dwarf systems zoom in instead of collapsing onto the star
+  const maxAu=Math.max(hz.oO*1.2,P.au*1.15,0.02);
+  const radPx=au=>(au/maxAu)*(W-x0-pad);
+  const riC=radPx(hz.iC), roC=radPx(hz.oC), riO=radPx(hz.iO), roO=radPx(hz.oO);
+  const rOrb=Math.max(radPx(P.au), sd/2+psz/2+4);   // keep the planet off the star disc
+  const pCx=x0+rOrb, inHZ=R.subs[1].score>=0.6;
+  const baseCol=inHZ?'#5CC8B0':R.subs[1].label==='Too hot'?'#ff5d5d':'#E17564';
+  const litX=pCx-psz/2, darkX=pCx+psz/2;
+  const rLock=radPx(R.tidal.rT);
 
-  // Scale to fit whichever of (orbit, optimistic-HZ outer) is largest. No
-  // fixed minimum: M-dwarf systems sit at ~0.05 AU and need a tight zoom or
-  // the planet visually overlaps the star.
-  const maxAu=Math.max(hz.oO*1.20, P.au*1.15, 0.02);
-  const radPx=au=> (au/maxAu)*(W-x0-pad);
-
-  const riC=radPx(hz.iC), roC=radPx(hz.oC);
-  const riO=radPx(hz.iO), roO=radPx(hz.oO);
-  const rOrbRaw=radPx(P.au);
-  // Enforce a visual gap so the planet disc never overlaps the star disc,
-  // even when the true orbit is physically tiny (hot Jupiters, M-dwarf HZs).
-  const minSep = sd/2 + psz/2 + 4;
-  const rOrb = Math.max(rOrbRaw, minSep);
-
-  // planet placed on orbit at angle 0 (along +x from star), top-down view
-  const planetCx = x0 + rOrb, planetCy = cy;
-  const inHZ = R.subs[1].score>=0.6;
-  const tooHot = R.subs[1].score<0.2 && P.au<hz.iC;
-  const baseCol = inHZ ? 'var(--emerald)' : tooHot ? 'var(--m)' : R.col;
-
-  // half-lit gradient: lit hemisphere faces the star (toward -x relative to planet)
-  const litX = planetCx - psz/2, darkX = planetCx + psz/2;
-
-  const ringMid=(riC+roC)/2, ringW=Math.max(2,roC-riC);
-  const ringMidO=(riO+roO)/2, ringWO=Math.max(2,roO-riO);
-
-  // HZ label sits where the inner ring meets the equator (right side of star, just inside CHZ)
-  const hzLblX = x0 + (riC+roC)/2;
-
-  svg.innerHTML = `
+  svg.innerHTML=`
     <defs>
-      <radialGradient id="starG" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#ffffff"/>
-        <stop offset="55%" stop-color="${star.col}" stop-opacity="0.95"/>
-        <stop offset="100%" stop-color="${star.col}" stop-opacity="0.85"/>
-      </radialGradient>
-      <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
-        <stop offset="0%"  stop-color="${star.col}" stop-opacity="0.55"/>
-        <stop offset="45%" stop-color="${star.col}" stop-opacity="0.18"/>
-        <stop offset="100%" stop-color="${star.col}" stop-opacity="0"/>
-      </radialGradient>
+      <radialGradient id="starG"><stop offset="0%" stop-color="#fff"/>
+        <stop offset="55%" stop-color="${star.col}" stop-opacity=".95"/><stop offset="100%" stop-color="${star.col}" stop-opacity=".85"/></radialGradient>
+      <radialGradient id="starGlow"><stop offset="0%" stop-color="${star.col}" stop-opacity=".5"/>
+        <stop offset="45%" stop-color="${star.col}" stop-opacity=".16"/><stop offset="100%" stop-color="${star.col}" stop-opacity="0"/></radialGradient>
       <linearGradient id="planetG" x1="${litX}" y1="${cy}" x2="${darkX}" y2="${cy}" gradientUnits="userSpaceOnUse">
-        <stop offset="0%"  stop-color="#ffffff" stop-opacity="0.55"/>
-        <stop offset="35%" stop-color="${baseCol}" stop-opacity="1"/>
-        <stop offset="100%" stop-color="#0a0e1a" stop-opacity="0.85"/>
-      </linearGradient>
+        <stop offset="0%" stop-color="#fff" stop-opacity=".55"/><stop offset="35%" stop-color="${baseCol}"/>
+        <stop offset="100%" stop-color="#09122C" stop-opacity=".9"/></linearGradient>
     </defs>
-
-    <!-- optimistic HZ (faint outer halo ring) -->
-    <circle cx="${x0}" cy="${cy}" r="${ringMidO}" fill="none"
-      stroke="rgba(52,227,164,0.10)" stroke-width="${ringWO}"/>
-
-    <!-- conservative HZ ring (the curved green band) -->
-    <circle cx="${x0}" cy="${cy}" r="${ringMid}" fill="none"
-      stroke="rgba(52,227,164,0.32)" stroke-width="${ringW}"/>
-
-    <!-- HZ edge guides (dashed) -->
-    <circle cx="${x0}" cy="${cy}" r="${riC}" fill="none"
-      stroke="rgba(52,227,164,0.55)" stroke-width="1" stroke-dasharray="3 4"/>
-    <circle cx="${x0}" cy="${cy}" r="${roC}" fill="none"
-      stroke="rgba(52,227,164,0.55)" stroke-width="1" stroke-dasharray="3 4"/>
-
-    <!-- orbit ring -->
-    <circle cx="${x0}" cy="${cy}" r="${rOrb}" fill="none"
-      stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
-
-    <!-- star glow + body -->
+    <circle cx="${x0}" cy="${cy}" r="${(riO+roO)/2}" fill="none" stroke="rgba(92,200,176,.10)" stroke-width="${Math.max(2,roO-riO)}"/>
+    <circle cx="${x0}" cy="${cy}" r="${(riC+roC)/2}" fill="none" stroke="rgba(92,200,176,.30)" stroke-width="${Math.max(2,roC-riC)}"/>
+    <circle cx="${x0}" cy="${cy}" r="${riC}" fill="none" stroke="rgba(92,200,176,.6)" stroke-dasharray="3 4"/>
+    <circle cx="${x0}" cy="${cy}" r="${roC}" fill="none" stroke="rgba(92,200,176,.6)" stroke-dasharray="3 4"/>
+    <circle cx="${x0}" cy="${cy}" r="${rLock}" fill="none" stroke="rgba(225,117,100,.75)" stroke-width="1.2" stroke-dasharray="6 4"/>
+    <circle cx="${x0}" cy="${cy}" r="${rOrb}" fill="none" stroke="rgba(246,236,232,.18)"/>
     <circle cx="${x0}" cy="${cy}" r="${sd*1.7}" fill="url(#starGlow)"/>
-    <circle cx="${x0}" cy="${cy}" r="${sd/2}"   fill="url(#starG)"/>
+    <circle cx="${x0}" cy="${cy}" r="${sd/2}" fill="url(#starG)"/>
+    <circle cx="${pCx}" cy="${cy}" r="${psz/2}" fill="url(#planetG)" stroke="rgba(0,0,0,.35)" stroke-width=".5"/>
+    <text x="${x0+(riC+roC)/2}" y="${H-9}" fill="rgba(92,200,176,.9)" font-family="Manrope,sans-serif"
+      font-size="10" font-weight="700" letter-spacing="1.5" text-anchor="middle">HZ</text>`;
 
-    <!-- planet (top-down, lit side faces star) -->
-    <circle cx="${planetCx}" cy="${planetCy}" r="${psz/2}" fill="url(#planetG)"
-      stroke="rgba(0,0,0,0.35)" stroke-width="0.5"/>
-
-    <!-- HZ label along the equator inside the band -->
-    <text x="${hzLblX}" y="${H-9}" fill="rgba(52,227,164,0.85)"
-      font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1.5"
-      text-anchor="middle">HZ</text>
-  `;
-
-  const stageAu = P.au<0.1 ? P.au.toFixed(3) : P.au.toFixed(2);
-  $('stageMeta').innerHTML=`<b>${star.custom?'★':star.sp}</b>-type · ${Math.round(star.teff)} K<br><b>${stageAu}</b> AU · <b>${P.rp.toFixed(1)}</b> R⊕`;
+  $('stageMeta').innerHTML=`<b>${star.custom?(star.label||'Custom'):star.sp+'-type'}</b> · ${Math.round(star.teff)} K<br>`+
+    `<b>${P.au<0.1?P.au.toFixed(3):P.au.toFixed(2)}</b> AU · <b>${P.rp.toFixed(2)}</b> R⊕`;
 }
 
-/* presets — major known exoplanets + Solar System calibrators */
+/* presets: well-known planets plus Solar System calibrators */
+const PC='planet_candidate_clean';
 const PRE={
-  earth:       {kstar:'sun',        au:1.00,   rp:1.00, mp:1.00,  disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
-  venus:       {kstar:'sun',        au:0.72,   rp:0.95, mp:0.82,  disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
-  mars:        {kstar:'sun',        au:1.52,   rp:0.53, mp:0.107, disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
-  proxb:       {kstar:'proxima',    au:0.0485, rp:1.07, mp:1.27,  disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
-  trappist1b:  {kstar:'trappist1',  au:0.0115, rp:1.12, mp:1.37,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:8},
-  trappist1c:  {kstar:'trappist1',  au:0.0158, rp:1.10, mp:1.31,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:8},
-  trappist1d:  {kstar:'trappist1',  au:0.0223, rp:0.79, mp:0.39,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
-  trappist1e:  {kstar:'trappist1',  au:0.0293, rp:0.92, mp:0.69,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
-  trappist1f:  {kstar:'trappist1',  au:0.0385, rp:1.05, mp:1.04,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
-  trappist1g:  {kstar:'trappist1',  au:0.0468, rp:1.13, mp:1.32,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:7},
-  trappist1h:  {kstar:'trappist1',  au:0.0619, rp:0.76, mp:0.33,  disp:'CP', verd:'planet_candidate_clean',        obs:8, det:6},
-  kepler186f:  {kstar:'kepler186',  au:0.43,   rp:1.17, mp:1.4,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
-  kepler442b:  {kstar:'kepler442',  au:0.41,   rp:1.34, mp:2.3,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
-  kepler452b:  {kstar:'kepler452',  au:1.05,   rp:1.63, mp:5.0,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
-  kepler1649c: {kstar:'kepler1649', au:0.083,  rp:1.06, mp:1.2,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
-  toi700d:     {kstar:'toi700',     au:0.163,  rp:1.19, mp:1.7,   disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
-  toi700e:     {kstar:'toi700',     au:0.134,  rp:0.95, mp:0.8,   disp:'CP', verd:'planet_candidate_clean',        obs:6, det:6},
-  k218b:       {kstar:'k218',       au:0.143,  rp:2.61, mp:8.6,   disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
-  kepler22b:   {kstar:'kepler22',   au:0.85,   rp:2.40, mp:6.0,   disp:'CP', verd:'planet_candidate_clean',        obs:5, det:5},
-  gj1214b:     {kstar:'gj1214',     au:0.014,  rp:2.85, mp:6.55,  disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
-  cnce:        {kstar:'cnc55',      au:0.015,  rp:1.88, mp:7.99,  disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
-  peg51b:      {kstar:'peg51',      au:0.052,  rp:3.50, mp:12,    disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
-  hd209458b:   {kstar:'hd209458',   au:0.047,  rp:3.50, mp:12,    disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
-  hotjup:      {star:3,             au:0.05,   rp:3.50, mp:12,    disp:'CP', verd:'planet_candidate_clean',        obs:4, det:4},
-  superearth:  {star:1,             au:0.70,   rp:1.60, mp:5.0,   disp:'PC', verd:'planet_candidate_clean',        obs:5, det:4},
-  eb:          {star:4,             au:0.40,   rp:3.40, mp:12,    disp:'FP', verd:'eclipsing_binary_candidate',    obs:3, det:3},
+  earth:       {kstar:'sun',        au:1.00,   rp:1.00, mp:1.00,  disp:'',   verd:PC},
+  venus:       {kstar:'sun',        au:0.72,   rp:0.95, mp:0.82,  disp:'',   verd:PC},
+  mars:        {kstar:'sun',        au:1.52,   rp:0.53, mp:0.107, disp:'',   verd:PC},
+  proxb:       {kstar:'proxima',    au:0.0485, rp:1.07, mp:1.27,  disp:'',   verd:PC},
+  trappist1b:  {kstar:'trappist1',  au:0.0115, rp:1.12, mp:1.37,  disp:'',   verd:PC},
+  trappist1c:  {kstar:'trappist1',  au:0.0158, rp:1.10, mp:1.31,  disp:'',   verd:PC},
+  trappist1d:  {kstar:'trappist1',  au:0.0223, rp:0.79, mp:0.39,  disp:'',   verd:PC},
+  trappist1e:  {kstar:'trappist1',  au:0.0293, rp:0.92, mp:0.69,  disp:'',   verd:PC},
+  trappist1f:  {kstar:'trappist1',  au:0.0385, rp:1.05, mp:1.04,  disp:'',   verd:PC},
+  trappist1g:  {kstar:'trappist1',  au:0.0468, rp:1.13, mp:1.32,  disp:'',   verd:PC},
+  trappist1h:  {kstar:'trappist1',  au:0.0619, rp:0.76, mp:0.33,  disp:'',   verd:PC},
+  kepler186f:  {kstar:'kepler186',  au:0.43,   rp:1.17, mp:1.4,   disp:'',   verd:PC},
+  kepler442b:  {kstar:'kepler442',  au:0.41,   rp:1.34, mp:2.3,   disp:'',   verd:PC},
+  kepler452b:  {kstar:'kepler452',  au:1.05,   rp:1.63, mp:5.0,   disp:'',   verd:PC},
+  kepler1649c: {kstar:'kepler1649', au:0.083,  rp:1.06, mp:1.2,   disp:'',   verd:PC},
+  toi700d:     {kstar:'toi700',     au:0.163,  rp:1.19, mp:1.7,   disp:'CP', verd:PC},
+  toi700e:     {kstar:'toi700',     au:0.134,  rp:0.95, mp:0.8,   disp:'CP', verd:PC},
+  k218b:       {kstar:'k218',       au:0.143,  rp:2.61, mp:8.6,   disp:'',   verd:PC},
+  kepler22b:   {kstar:'kepler22',   au:0.85,   rp:2.40, mp:6.0,   disp:'',   verd:PC},
+  gj1214b:     {kstar:'gj1214',     au:0.014,  rp:2.85, mp:6.55,  disp:'',   verd:PC},
+  cnce:        {kstar:'cnc55',      au:0.015,  rp:1.88, mp:7.99,  disp:'',   verd:PC},
+  peg51b:      {kstar:'peg51',      au:0.052,  rp:3.50, mp:12,    disp:'',   verd:PC},
+  hd209458b:   {kstar:'hd209458',   au:0.047,  rp:3.50, mp:12,    disp:'',   verd:PC},
+  hotjup:      {star:3,             au:0.05,   rp:3.50, mp:12,    disp:'',   verd:PC,  age:null},
+  superearth:  {star:1,             au:0.70,   rp:1.60, mp:5.0,   disp:'PC', verd:PC,  age:null},
+  eb:          {star:4,             au:0.40,   rp:3.40, mp:12,    disp:'FP', verd:'eclipsing_binary_candidate', age:null},
 };
 $('preset').addEventListener('change',e=>{
   const p=PRE[e.target.value]; if(!p)return;
-  if(p.kstar){
-    applyKnownStar(p.kstar,{skipSnap:true, fromPreset:true});
-  }else{
-    starIdx=p.star;
-    $('knownStar').value='';
-    if(customStar) customStar.label=null;
-  }
+  if(p.kstar) applyKnownStar(p.kstar,{skipSnap:true,fromPreset:true});
+  else{ starIdx=p.star; $('knownStar').value=''; customStar.label=null; setAge(p.age); }
   $('au').value=p.au; $('rad').value=p.rp; $('mass').value=p.mp;
   $('disp').value=p.disp; $('verd').value=p.verd;
-  $('secObs').value=p.obs; $('secDet').max=p.obs; $('secDet').value=p.det;
   buildStarSeg(); render();
 });
 
-['au','rad','mass','disp','verd','secObs','secDet'].forEach(id=>{
+['au','rad','mass','age','ageUnknown','verd','disp'].forEach(id=>{
   $(id).addEventListener('input',()=>{
-    // Any manual tweak to a planetary observable means we've diverged from
-    // the active preset — revert the dropdown so the UI doesn't lie about
-    // which template is in effect.
+    // a manual tweak means we no longer match the preset; clear the menu
     if($('preset').value) $('preset').value='';
     render();
   });
 });
 
-/* ── theme switcher ── (chrome only — the stage is locked to dark) */
-(function initThemes(){
-  const btns = document.querySelectorAll('#themeSwitch button');
-  function set(t){
-    document.body.setAttribute('data-theme', t);
-    btns.forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.theme===t)));
-    try{ localStorage.setItem('exoworld-theme', t); }catch(e){}
+/* theme: follow the system until the toggle is pressed */
+(function initTheme(){
+  const btn=$('themeBtn'), root=document.documentElement;
+  const sysDark=()=>!window.matchMedia||window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let saved=null; try{saved=localStorage.getItem('exoworld-theme');}catch(e){}
+  if(saved==='dark'||saved==='light') root.setAttribute('data-theme',saved);
+  const current=()=>root.getAttribute('data-theme')||(sysDark()?'dark':'light');
+  function paint(){
+    const dark=current()==='dark';
+    btn.innerHTML=`<i data-lucide="${dark?'sun':'moon'}"></i>${dark?'Light':'Dark'}`;
+    if(window.lucide)lucide.createIcons();
   }
-  let saved=null; try{ saved=localStorage.getItem('exoworld-theme'); }catch(e){}
-  set(saved && ['night','black','warm','light'].includes(saved) ? saved : 'night');
-  btns.forEach(b=>b.addEventListener('click',()=>set(b.dataset.theme)));
+  btn.addEventListener('click',()=>{
+    const next=current()==='dark'?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('exoworld-theme',next);}catch(e){}
+    paint();
+  });
+  paint();
 })();
 
-// custom-star inputs — update the Custom STARS entry in place
-const customStar = STARS.find(s=>s.custom);
-const customIdx = STARS.indexOf(customStar);
+// custom-star inputs edit the Custom entry in place
+const customStar=STARS.find(s=>s.custom), customIdx=STARS.indexOf(customStar);
 function syncCustom(){
-  const t=Math.max(2000,Math.min(50000,+$('csTeff').value||5772));
-  const r=Math.max(0.05,Math.min(50,+$('csR').value||1));
-  customStar.teff=t; customStar.r=r; customStar.col=teffToColor(t);
-  // typing in the inputs implies a one-off custom star — clear the known-star dropdown
+  customStar.teff=Math.max(2000,Math.min(50000,+$('csTeff').value||5772));
+  customStar.r=Math.max(0.05,Math.min(50,+$('csR').value||1));
+  customStar.m=Math.max(0.05,Math.min(20,+$('csM').value||1));
+  customStar.col=teffToColor(customStar.teff);
+  customStar.label=null;
   if($('knownStar').value) $('knownStar').value='';
   if(STARS[starIdx].custom){ buildStarSeg(); render(); }
 }
-$('csTeff').addEventListener('input',syncCustom);
-$('csR').addEventListener('input',syncCustom);
+['csTeff','csR','csM'].forEach(id=>$(id).addEventListener('input',syncCustom));
 
-function applyKnownStar(key, opts={}){
-  const s=KNOWN_STARS[key]; if(!s) return;
-  customStar.teff=s.teff; customStar.r=s.r; customStar.col=teffToColor(s.teff);
-  customStar.label=s.name;
-  $('csTeff').value=s.teff;
-  $('csR').value=s.r;
+function applyKnownStar(key,opts={}){
+  const s=KNOWN_STARS[key]; if(!s)return;
+  Object.assign(customStar,{teff:s.teff,r:s.r,m:s.m,col:teffToColor(s.teff),label:s.name});
+  $('csTeff').value=s.teff; $('csR').value=s.r; $('csM').value=s.m;
   starIdx=customIdx;
   $('knownStar').value=key;
+  setAge(s.age||null);
   if(!opts.skipSnap) snapToHZ();
-  if(!opts.fromPreset){
-    $('preset').value='';   // diverged from any planet preset
-    buildStarSeg(); render();
-  }
+  if(!opts.fromPreset){ $('preset').value=''; buildStarSeg(); render(); }
 }
 $('knownStar').addEventListener('change',e=>{ if(e.target.value) applyKnownStar(e.target.value); });
 
 window.addEventListener('resize',render);
-
 buildStarSeg();
 render();
-if(window.lucide)lucide.createIcons();
 </script>
 </body>
 </html>
